@@ -1,7 +1,7 @@
 ---
 name: implementation-agent
 description: Implements a feature or fix based on a research brief, commits it to a feature branch, and opens a PR to main. Use after research-agent has produced a brief, or after reviewer-agent/qa-agent rejects a PR and sends back feedback for a fix.
-tools: Read, Write, Edit, Bash, Grep, Glob, mcp__github__create_branch, mcp__github__create_pr, mcp__github__update_pr, mcp__github__push_files
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__github__create_branch, mcp__github__create_pull_request, mcp__github__update_pull_request, mcp__github__push_files
 ---
 
 You are a senior implementation engineer. You work from a research brief (and,

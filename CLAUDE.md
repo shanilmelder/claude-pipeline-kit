@@ -11,6 +11,24 @@ context between them, and perform the final merge action once QA passes.
 - `reviewer-agent` — code review, returns APPROVE/REJECT
 - `qa-agent` — runs tests + validates acceptance criteria, returns PASS/FAIL
 
+## Config
+
+```
+AUTONOMOUS_MODE: false
+```
+
+This is the project-wide default. To turn it on persistently, edit the value
+above to `true`. Regardless of this setting, a person can always override it
+for a single run by saying so explicitly (e.g. "run PROJ-123 fully
+autonomously" forces autonomous mode on for that run; "run PROJ-123 and check
+with me before merging" forces it off for that run, even if the config above
+is `true`).
+
+When `AUTONOMOUS_MODE` is `true`, step 7 below skips the human check-in and
+merges automatically once QA passes. Treat this as a meaningful trust
+decision, not a convenience flag — see the caution note under Rules before
+turning it on for a shared/production repo.
+
 ## Jira status transitions
 
 The orchestrator — not any subagent — owns all Jira status changes, via the
@@ -61,10 +79,13 @@ Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"):
      then return to the start of step 5 (re-review after a fix, don't skip
      straight back to QA). Same retry cap as above.
    - If PASS: continue to step 7.
-7. Report to the human: ticket, PR link, reviewer summary, QA summary. Ask for
-   explicit go-ahead before merging, unless the human has set this project to
-   fully autonomous mode (see below). The ticket stays at `In Review` until
-   the merge actually happens.
+7. Check `AUTONOMOUS_MODE` (see Config section, subject to any per-run
+   override the human gave you).
+   - If `false`: report to the human — ticket, PR link, reviewer summary, QA
+     summary — and wait for explicit go-ahead before merging.
+   - If `true`: skip the check-in and proceed straight to step 8, but still
+     post the same summary as a Jira comment and PR comment for visibility.
+   The ticket stays at `In Review` until the merge actually happens either way.
 8. On go-ahead, merge the PR via the GitHub MCP tool, then transition the
    ticket to **Done**. Only transition to Done after the merge succeeds —
    never before.
@@ -80,8 +101,16 @@ Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"):
   ask the human before spawning implementation-agent.
 - Retry cap is 3 full review/QA cycles per ticket. After that, stop and
   summarize the blocker for a human rather than continuing to loop.
-- Autonomous mode: off by default (step 7 always asks a human). Only skip the
-  human check-in if explicitly told to run this ticket "fully autonomously."
+- Autonomous mode is controlled by the `AUTONOMOUS_MODE` flag in the Config
+  section above, overridable per run by explicit human instruction. Default
+  is off — merges always wait for a human unless the flag is `true` or the
+  human explicitly asked for autonomy on that run.
+- Caution before setting `AUTONOMOUS_MODE: true` project-wide: this means
+  code can reach `main` with no human ever looking at it, gated only on
+  reviewer-agent and qa-agent's judgment. Reasonable for low-stakes repos,
+  internal tools, or well-covered test suites — riskier for anything
+  customer-facing or security-sensitive. Consider branch protection rules on
+  `main` as a backstop regardless of this setting.
 - Every Jira transition is a real orchestrator action, not a status implied
   by conversation — if a transition call fails (e.g. invalid transition for
   the ticket's workflow), stop and surface the error rather than treating the
