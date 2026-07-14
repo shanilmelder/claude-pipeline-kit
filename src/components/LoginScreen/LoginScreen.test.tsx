@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginScreen } from './LoginScreen';
 import { HARDCODED_EMAIL, HARDCODED_PASSWORD } from '../../constants/auth';
+import { getSession } from '../../services/sessionService';
 
 const navigateMock = vi.fn();
 
@@ -26,6 +27,7 @@ function renderLoginScreen() {
 describe('LoginScreen', () => {
   beforeEach(() => {
     navigateMock.mockReset();
+    sessionStorage.clear();
   });
 
   it('renders Email and Password fields with proper labels', () => {
@@ -75,6 +77,7 @@ describe('LoginScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Login' }));
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/dashboard'));
+    expect(getSession()).toEqual({ email: HARDCODED_EMAIL });
   });
 
   it('shows an inline alert on wrong credentials and does not navigate', async () => {
@@ -87,6 +90,7 @@ describe('LoginScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password');
     expect(navigateMock).not.toHaveBeenCalled();
+    expect(getSession()).toBeNull();
   });
 
   it('shows an inline alert for an invalid email format instead of navigating', async () => {

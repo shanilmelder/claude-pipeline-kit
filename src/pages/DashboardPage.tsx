@@ -1,8 +1,14 @@
+import { DashboardHeader } from '../components/DashboardHeader/DashboardHeader';
+import { UserList } from '../components/UserList/UserList';
+
 export function DashboardPage() {
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Dashboard</h1>
-      <p>You are logged in.</p>
+    <div>
+      <DashboardHeader />
+      <main>
+        <h1>Users</h1>
+        <UserList />
+      </main>
     </div>
   );
 }
