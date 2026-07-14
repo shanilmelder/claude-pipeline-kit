@@ -8,3 +8,12 @@
  */
 export const HARDCODED_EMAIL = 'shanilmelder@gmail.com';
 export const HARDCODED_PASSWORD = 'Pass@123';
+
+/**
+ * sessionStorage key for the minimal demo session marker (KAN-3).
+ *
+ * There is no real backend/token issuance yet — this is a stand-in session
+ * layer sufficient to gate the dashboard route and drive the header/logout
+ * flow until a real auth backend exists.
+ */
+export const SESSION_STORAGE_KEY = 'kan_session';

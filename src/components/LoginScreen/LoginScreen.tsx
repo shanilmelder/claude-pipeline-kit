@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PasswordInput } from '../PasswordInput/PasswordInput';
 import { authenticate } from '../../services/authService';
+import { login } from '../../services/sessionService';
 import { isValidEmail, trimValue } from '../../utils/validation';
 import styles from './LoginScreen.module.css';
 
@@ -38,6 +39,7 @@ export function LoginScreen() {
     try {
       const isAuthenticated = await authenticate(trimmedEmail, password);
       if (isAuthenticated) {
+        login(trimmedEmail);
         navigate('/dashboard');
       } else {
         setError(INVALID_CREDENTIALS_MESSAGE);
