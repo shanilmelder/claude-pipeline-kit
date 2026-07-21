@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Signup.Api.Tests/Signup.Api.Tests.csproj" />
+  <Project Path="Signup.Api/Signup.Api.csproj" />
+</Solution>

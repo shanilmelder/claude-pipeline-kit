@@ -1,0 +1,13 @@
+@Signup.Api_HostAddress = http://localhost:5231
+
+POST {{Signup.Api_HostAddress}}/api/signup
+Content-Type: application/json
+
+{
+  "fullName": "Ada Lovelace",
+  "email": "ada@example.com",
+  "password": "Password1",
+  "confirmPassword": "Password1"
+}
+
+###
