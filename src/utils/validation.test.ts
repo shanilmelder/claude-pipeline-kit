@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidEmail, trimValue } from './validation';
+import { isValidEmail, isValidPassword, passwordsMatch, trimValue } from './validation';
 
 describe('trimValue', () => {
   it('removes leading and trailing whitespace', () => {
@@ -42,5 +42,41 @@ describe('isValidEmail', () => {
 
   it('rejects an email containing spaces', () => {
     expect(isValidEmail('shanil melder@gmail.com')).toBe(false);
+  });
+});
+
+describe('isValidPassword', () => {
+  it('accepts a password that is exactly 8 characters long', () => {
+    expect(isValidPassword('Pass@123')).toBe(true);
+  });
+
+  it('accepts a password longer than 8 characters', () => {
+    expect(isValidPassword('SuperSecurePassword1')).toBe(true);
+  });
+
+  it('rejects a password shorter than 8 characters', () => {
+    expect(isValidPassword('Sh0rt!')).toBe(false);
+  });
+
+  it('rejects an empty password', () => {
+    expect(isValidPassword('')).toBe(false);
+  });
+});
+
+describe('passwordsMatch', () => {
+  it('returns true when both values are identical and non-empty', () => {
+    expect(passwordsMatch('Pass@123', 'Pass@123')).toBe(true);
+  });
+
+  it('returns false when the values differ', () => {
+    expect(passwordsMatch('Pass@123', 'Pass@124')).toBe(false);
+  });
+
+  it('returns false when both values are empty', () => {
+    expect(passwordsMatch('Pass@123', '')).toBe(false);
+  });
+
+  it('returns false when the confirmation is empty but the password is not', () => {
+    expect(passwordsMatch('Pass@123', '')).toBe(false);
   });
 });

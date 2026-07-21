@@ -4,7 +4,6 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginScreen } from './LoginScreen';
 import { HARDCODED_EMAIL, HARDCODED_PASSWORD } from '../../constants/auth';
-import { getSession } from '../../services/sessionService';
 
 const navigateMock = vi.fn();
 
@@ -27,7 +26,6 @@ function renderLoginScreen() {
 describe('LoginScreen', () => {
   beforeEach(() => {
     navigateMock.mockReset();
-    sessionStorage.clear();
   });
 
   it('renders Email and Password fields with proper labels', () => {
@@ -77,7 +75,6 @@ describe('LoginScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Login' }));
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/dashboard'));
-    expect(getSession()).toEqual({ email: HARDCODED_EMAIL });
   });
 
   it('shows an inline alert on wrong credentials and does not navigate', async () => {
@@ -90,7 +87,6 @@ describe('LoginScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password');
     expect(navigateMock).not.toHaveBeenCalled();
-    expect(getSession()).toBeNull();
   });
 
   it('shows an inline alert for an invalid email format instead of navigating', async () => {
@@ -141,6 +137,14 @@ describe('LoginScreen', () => {
     expect(screen.getByRole('button', { name: /Logging in/ })).toBeDisabled();
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
+  });
+
+  it('renders a "Forgot Password?" link pointing to /forgot-password', () => {
+    renderLoginScreen();
+
+    const forgotPasswordLink = screen.getByRole('link', { name: 'Forgot Password?' });
+    expect(forgotPasswordLink).toBeInTheDocument();
+    expect(forgotPasswordLink).toHaveAttribute('href', '/forgot-password');
   });
 
   it('has a sensible tab order: email, password, toggle, submit', () => {

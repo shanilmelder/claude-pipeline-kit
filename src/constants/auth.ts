@@ -10,10 +10,21 @@ export const HARDCODED_EMAIL = 'shanilmelder@gmail.com';
 export const HARDCODED_PASSWORD = 'Pass@123';
 
 /**
- * sessionStorage key for the minimal demo session marker (KAN-3).
+ * KAN-4 (Forgot Password Flow — UI Only).
  *
- * There is no real backend/token issuance yet — this is a stand-in session
- * layer sufficient to gate the dashboard route and drive the header/logout
- * flow until a real auth backend exists.
+ * Cooldown, in seconds, before the "Resend email" link/button on the
+ * confirmation screen becomes clickable again. No design was attached to
+ * the ticket for this value — 30s is the example the ticket itself gives,
+ * used here as a reasonable default. Revisit if design/product provides a
+ * different value.
  */
-export const SESSION_STORAGE_KEY = 'kan_session';
+export const RESEND_COOLDOWN_SECONDS = 30;
+
+/**
+ * Minimum password length enforced by the (UI-only, mocked) reset password
+ * screen. The ticket's own acceptance criteria only specifies "min 8
+ * characters" as its example strength rule, so that's exactly what's
+ * implemented here — no additional complexity rules (uppercase/number/
+ * symbol requirements) were added since the ticket doesn't ask for them.
+ */
+export const MIN_PASSWORD_LENGTH = 8;

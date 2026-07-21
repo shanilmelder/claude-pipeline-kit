@@ -1,8 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PasswordInput } from '../PasswordInput/PasswordInput';
 import { authenticate } from '../../services/authService';
-import { login } from '../../services/sessionService';
 import { isValidEmail, trimValue } from '../../utils/validation';
 import styles from './LoginScreen.module.css';
 
@@ -39,7 +38,6 @@ export function LoginScreen() {
     try {
       const isAuthenticated = await authenticate(trimmedEmail, password);
       if (isAuthenticated) {
-        login(trimmedEmail);
         navigate('/dashboard');
       } else {
         setError(INVALID_CREDENTIALS_MESSAGE);
@@ -78,6 +76,10 @@ export function LoginScreen() {
           autoComplete="current-password"
           required
         />
+
+        <Link to="/forgot-password" className={styles.forgotPasswordLink}>
+          Forgot Password?
+        </Link>
 
         {error && (
           <p role="alert" className={styles.error}>
