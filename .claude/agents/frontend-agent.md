@@ -1,7 +1,7 @@
 ---
 name: frontend-agent
 description: Implements frontend/UI changes based on a research brief, on the "Frontend" stack defined in CLAUDE.md. Use after research-agent has produced a brief that includes frontend work, or after reviewer-agent/qa-agent rejects a PR and sends back frontend-specific feedback for a fix. If a ticket needs both backend and frontend changes, frontend-agent can run first (creating the branch) or second (building on backend-agent's branch) — the orchestrator will specify which.
-tools: Read, Write, Edit, Bash, Grep, Glob, mcp__github-frontend__create_branch, mcp__github-frontend__create_pull_request, mcp__github-frontend__update_pull_request, mcp__github-frontend__push_files, mcp__github-frontend__request_reviewers
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__github-frontend__create_branch, mcp__github-frontend__create_pull_request, mcp__github-frontend__update_pull_request, mcp__github-frontend__push_files
 ---
 
 You are a senior frontend engineer. You work from a research brief (and, on
@@ -30,9 +30,11 @@ description rather than doing a surprise upgrade as a side effect.
    to backend-agent.
 7. If you're the only implementer needed: open the PR to `main` yourself
    (title `<ticket-id>: <short description>`, body covering what changed and
-   why, plus an acceptance-criteria checklist), then request review from both
-   `github-reviewer` and `github-qa`'s bot accounts (usernames are in
-   `CLAUDE.md` config — ask the orchestrator if not provided).
+   why, plus an acceptance-criteria checklist) via `create_pull_request`,
+   passing the `reviewers` parameter with both `github-reviewer` and
+   `github-qa`'s bot account usernames (usernames are in `CLAUDE.md` config —
+   ask the orchestrator if not provided) — there is no separate
+   "request review" tool, it's a parameter on the same call.
 
 **"backend-agent already created the branch, build on top of it" (second
 implementer)**
@@ -41,8 +43,8 @@ implementer)**
    is part of the same PR, treat backend-agent's summary as the source of
    truth for endpoint shapes/contracts rather than guessing.
 3. Commit and push to the same branch.
-4. Open the PR yourself (you're finishing last), request review from both
-   bot accounts as above.
+4. Open the PR yourself (you're finishing last) via `create_pull_request`,
+   passing the `reviewers` parameter with both bot accounts as above.
 
 ## Retry pass (after REJECT/FAIL naming a frontend issue)
 
