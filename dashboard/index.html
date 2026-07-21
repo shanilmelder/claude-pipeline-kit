@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pipeline Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #12161f;
+    --line: #232a38;
+    --text: #dbe2ef;
+    --muted: #6b7688;
+    --idle: #2a3143;
+    --running: #d9a441;
+    --done: #3fb27f;
+    --failed: #e0555a;
+    --mono: "SFMono-Regular", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 32px 40px 60px;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+  }
+  h1 {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0;
+  }
+  #ticket {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--text);
+  }
+  #conn {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #conn.live::before {
+    content: "●";
+    color: var(--done);
+    margin-right: 6px;
+  }
+
+  /* stage tracker */
+  .track {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 36px;
+    overflow-x: auto;
+  }
+  .stage {
+    flex: 1;
+    min-width: 130px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-right: 10px;
+    position: relative;
+  }
+  .stage:last-child { margin-right: 0; }
+  .stage .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .stage .name {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .stage .status {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .stage[data-state="idle"]   { border-left: 3px solid var(--idle); }
+  .stage[data-state="running"]{ border-left: 3px solid var(--running); }
+  .stage[data-state="done"]   { border-left: 3px solid var(--done); }
+  .stage[data-state="failed"] { border-left: 3px solid var(--failed); }
+  .stage[data-state="idle"] .status    { color: var(--muted); }
+  .stage[data-state="running"] .status { color: var(--running); }
+  .stage[data-state="done"] .status    { color: var(--done); }
+  .stage[data-state="failed"] .status  { color: var(--failed); }
+  .stage[data-state="running"] {
+    box-shadow: 0 0 0 1px var(--running);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 1px var(--running); }
+    50% { box-shadow: 0 0 0 1px var(--running), 0 0 14px -2px var(--running); }
+  }
+
+  /* log */
+  .log-header {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  #log {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 18px;
+    max-height: 460px;
+    overflow-y: auto;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 82px 150px 1fr;
+    gap: 14px;
+    padding: 4px 0;
+    border-bottom: 1px solid #1a2030;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .t { color: var(--muted); }
+  .row .a { color: #8fa3c9; }
+  .row .s { color: var(--text); }
+  .row .s.err { color: var(--failed); }
+  #empty {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Agentic Pipeline</h1>
+    <div id="ticket">waiting for a run…</div>
+  </div>
+  <div id="conn">connecting…</div>
+</header>
+
+<div class="track" id="track"></div>
+
+<div class="log-header">Event log</div>
+<div id="log"><div id="empty">No events yet. Run the pipeline in Claude Code and this will populate live.</div></div>
+
+<script>
+const STAGES = [
+  { key: "orchestrator-agent",   label: "Orchestrator" },
+  { key: "research-agent",       label: "Research" },
+  { key: "backend-agent",        label: "Backend" },
+  { key: "frontend-agent",       label: "Frontend" },
+  { key: "reviewer-agent",       label: "Review" },
+  { key: "qa-agent",             label: "QA" },
+];
+
+const trackEl = document.getElementById("track");
+const logEl = document.getElementById("log");
+const connEl = document.getElementById("conn");
+const ticketEl = document.getElementById("ticket");
+
+const state = {}; // key -> "idle" | "running" | "done" | "failed"
+STAGES.forEach(s => state[s.key] = "idle");
+
+function renderTrack() {
+  trackEl.innerHTML = STAGES.map((s, i) => `
+    <div class="stage" data-state="${state[s.key]}">
+      <span class="num">${String(i + 1).padStart(2, "0")}</span>
+      <div class="name">${s.label}</div>
+      <div class="status">${state[s.key]}</div>
+    </div>
+  `).join("");
+}
+renderTrack();
+
+let lastTs = null;
+let seenAny = false;
+
+function fmtTime(iso) {
+  try { return new Date(iso).toLocaleTimeString(); } catch { return iso; }
+}
+
+function applyEvent(ev) {
+  const agent = ev.agent_type || "";
+
+  if (ev.event === "SubagentStart" && STAGES.some(s => s.key === agent)) {
+    state[agent] = "running";
+  }
+  if (ev.event === "SubagentStop" && STAGES.some(s => s.key === agent)) {
+    const errLike = /REJECT|FAIL|ERROR/i.test(ev.summary || "");
+    state[agent] = errLike ? "failed" : "done";
+  }
+}
+
+function appendLog(events) {
+  if (!events.length) return;
+  if (!seenAny) {
+    logEl.innerHTML = "";
+    seenAny = true;
+  }
+  const frag = document.createDocumentFragment();
+  events.forEach(ev => {
+    applyEvent(ev);
+    const row = document.createElement("div");
+    row.className = "row";
+    const isErr = /error|fail|reject/i.test(ev.summary || "");
+    row.innerHTML = `
+      <div class="t">${fmtTime(ev.ts)}</div>
+      <div class="a">${ev.agent_type || ev.tool_name || "-"}</div>
+      <div class="s ${isErr ? "err" : ""}">${ev.summary || ""}</div>
+    `;
+    frag.appendChild(row);
+  });
+  logEl.appendChild(frag);
+  logEl.scrollTop = logEl.scrollHeight;
+  renderTrack();
+}
+
+async function poll() {
+  try {
+    const url = "/api/events" + (lastTs ? `?since=${encodeURIComponent(lastTs)}` : "");
+    const res = await fetch(url);
+    const events = await res.json();
+    if (events.length) {
+      lastTs = events[events.length - 1].ts;
+      appendLog(events);
+    }
+    connEl.textContent = "live";
+    connEl.classList.add("live");
+  } catch (e) {
+    connEl.textContent = "disconnected — retrying…";
+    connEl.classList.remove("live");
+  }
+  setTimeout(poll, 2000);
+}
+poll();
+</script>
+
+</body>
+</html>
