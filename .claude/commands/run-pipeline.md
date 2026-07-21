@@ -1,8 +1,8 @@
-Run the full agentic development pipeline defined in CLAUDE.md for the ticket
-below. Follow the pipeline steps exactly, spawning research-agent,
-implementation-agent, reviewer-agent, and qa-agent in order, respecting the
-retry cap and human check-in rules — and transitioning the Jira ticket through
-To Do -> In Progress -> In Review -> Done exactly as specified in the
-"Jira status transitions" section of CLAUDE.md.
+Spawn `orchestrator-agent` via the Task tool to run the full agentic
+development pipeline for the ticket below. Pass it the ticket ID and any
+explicit overrides mentioned (e.g. autonomous mode for this run only). Wait
+for it to finish, then relay its final summary — ticket status, PR link,
+reviewer/QA outcome — back as your response. Do not run the pipeline steps
+yourself; that's orchestrator-agent's job.
 
 Ticket: $ARGUMENTS
