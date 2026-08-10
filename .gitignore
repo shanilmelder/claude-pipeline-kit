@@ -1,0 +1,19 @@
+# Pipeline runtime artifacts — per-machine, not shared history.
+.claude/pipeline-status.jsonl
+.claude/runs/
+.claude/settings.local.json
+
+# QA worktrees (qa-agent creates ../.qa-<ticket>; this covers in-repo strays)
+.qa-*/
+
+# Secrets — scripts/.env holds the bot account PATs. Never commit it;
+# scripts/.env.example documents the shape instead.
+.env
+*.env
+!*.env.example
+
+# Build output
+node_modules/
+dist/
+bin/
+obj/

@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pipeline Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #12161f;
+    --panel-2: #171c27;
+    --line: #232a38;
+    --text: #dbe2ef;
+    --muted: #6b7688;
+    --idle: #2a3143;
+    --running: #d9a441;
+    --done: #3fb27f;
+    --failed: #e0555a;
+    --accent: #6ea8fe;
+    --mono: "SFMono-Regular", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 32px 40px 60px;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+  }
+  h1 {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0;
+  }
+  #ticket { font-family: var(--mono); font-size: 20px; color: var(--text); }
+  #conn { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  #conn.live::before { content: "●"; color: var(--done); margin-right: 6px; }
+
+  .section-label {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* launcher */
+  .launcher {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 28px;
+  }
+  .launcher-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  input[type="text"], select {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+  input[type="text"] { width: 150px; text-transform: uppercase; }
+  input[type="text"]:focus, select:focus { outline: none; border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #0b1220;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.1); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.ghost {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--line);
+    font-weight: 500;
+    padding: 5px 11px;
+    font-size: 12px;
+  }
+  button.ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+  button.danger { background: transparent; border-color: var(--failed); color: var(--failed); font-weight: 500; padding: 5px 11px; font-size: 12px; }
+  .hint { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+  #launch-msg { margin-top: 10px; font-family: var(--mono); font-size: 12px; }
+  #launch-msg.err { color: var(--failed); }
+  #launch-msg.ok { color: var(--done); }
+
+  /* runs */
+  #runs { margin-bottom: 28px; }
+  .run {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--idle);
+    border-radius: 6px;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .run[data-status="running"]   { border-left-color: var(--running); }
+  .run[data-status="completed"] { border-left-color: var(--done); }
+  .run[data-status="failed"]    { border-left-color: var(--failed); }
+  .run[data-status="stopped"]   { border-left-color: var(--muted); }
+  .run .rt { font-weight: 600; color: var(--text); min-width: 90px; }
+  .run .rs { text-transform: uppercase; letter-spacing: 0.04em; min-width: 84px; }
+  .run[data-status="running"] .rs   { color: var(--running); }
+  .run[data-status="completed"] .rs { color: var(--done); }
+  .run[data-status="failed"] .rs    { color: var(--failed); }
+  .run[data-status="stopped"] .rs   { color: var(--muted); }
+  .run .rm { color: var(--muted); flex: 1; }
+  .run-tail {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    background: #0b0e15;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin: -4px 0 10px;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  /* stage tracker */
+  .track { display: flex; align-items: stretch; margin-bottom: 32px; overflow-x: auto; }
+  .col { flex: 1; min-width: 132px; margin-right: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .col:last-child { margin-right: 0; }
+  .col.parallel { position: relative; }
+  .col.parallel::after {
+    content: "parallel";
+    position: absolute;
+    top: -14px; right: 2px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .stage {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    position: relative;
+  }
+  .col.parallel .stage { padding: 10px 14px; }
+  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .stage .name { font-size: 13px; font-weight: 600; }
+  .stage .status { font-family: var(--mono); font-size: 11px; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stage[data-state="idle"]   { border-left: 3px solid var(--idle); }
+  .stage[data-state="running"]{ border-left: 3px solid var(--running); }
+  .stage[data-state="done"]   { border-left: 3px solid var(--done); }
+  .stage[data-state="failed"] { border-left: 3px solid var(--failed); }
+  .stage[data-state="idle"] .status    { color: var(--muted); }
+  .stage[data-state="running"] .status { color: var(--running); }
+  .stage[data-state="done"] .status    { color: var(--done); }
+  .stage[data-state="failed"] .status  { color: var(--failed); }
+  .stage[data-state="running"] {
+    box-shadow: 0 0 0 1px var(--running);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 1px var(--running); }
+    50% { box-shadow: 0 0 0 1px var(--running), 0 0 14px -2px var(--running); }
+  }
+
+  /* log */
+  .log-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .log-bar .section-label { margin-bottom: 0; }
+  .log-bar input[type="text"] { width: 220px; text-transform: none; font-size: 12px; padding: 5px 9px; }
+  .log-bar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  #log {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 18px;
+    max-height: 460px;
+    overflow-y: auto;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 82px 150px 1fr;
+    gap: 14px;
+    padding: 4px 0;
+    border-bottom: 1px solid #1a2030;
+  }
+  .row:last-child { border-bottom: none; }
+  .row.hidden { display: none; }
+  .row .t { color: var(--muted); }
+  .row .a { color: #8fa3c9; }
+  .row .s { color: var(--text); word-break: break-word; }
+  .row .s.err { color: var(--failed); }
+  #empty { color: var(--muted); font-family: var(--mono); font-size: 12.5px; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Agentic Pipeline</h1>
+    <div id="ticket">waiting for a run…</div>
+  </div>
+  <div id="conn">connecting…</div>
+</header>
+
+<div class="section-label">Start a run</div>
+<div class="launcher">
+  <div class="launcher-row">
+    <input type="text" id="ticket-input" placeholder="PROJ-123" autocomplete="off" spellcheck="false" />
+    <select id="mode-select" title="Overrides AUTONOMOUS_MODE for this run only">
+      <option value="default">Use CLAUDE.md default</option>
+      <option value="autonomous">Autonomous — merge without asking</option>
+      <option value="supervised">Supervised — stop before merge</option>
+    </select>
+    <button id="run-btn">Run pipeline</button>
+    <span class="hint">spawns <code>claude -p "/run-pipeline &lt;ticket&gt;"</code> in the project root</span>
+  </div>
+  <div id="launch-msg"></div>
+</div>
+
+<div id="runs-wrap" style="display:none">
+  <div class="section-label">Runs this session</div>
+  <div id="runs"></div>
+</div>
+
+<div class="track" id="track"></div>
+
+<div class="log-bar">
+  <div class="section-label">Event log</div>
+  <input type="text" id="filter" placeholder="filter…" autocomplete="off" />
+  <label><input type="checkbox" id="errors-only" /> errors only</label>
+  <label><input type="checkbox" id="autoscroll" checked /> follow</label>
+</div>
+<div id="log"><div id="empty">No events yet. Start a run above, or run the pipeline in Claude Code.</div></div>
+
+<script>
+// Review and QA run concurrently as one gate — the track renders that shape
+// rather than implying a six-step queue.
+const COLUMNS = [
+  { label: "Orchestrator", stages: [{ key: "orchestrator-agent", label: "Orchestrator" }] },
+  { label: "Research",     stages: [{ key: "research-agent",     label: "Research" }] },
+  { label: "Implement",    stages: [{ key: "backend-agent",      label: "Backend" },
+                                    { key: "frontend-agent",     label: "Frontend" }], parallel: true },
+  { label: "Gate",         stages: [{ key: "reviewer-agent",     label: "Review" },
+                                    { key: "qa-agent",           label: "QA" }], parallel: true },
+];
+
+const trackEl   = document.getElementById("track");
+const logEl     = document.getElementById("log");
+const connEl    = document.getElementById("conn");
+const ticketEl  = document.getElementById("ticket");
+const runsEl    = document.getElementById("runs");
+const runsWrap  = document.getElementById("runs-wrap");
+const runBtn    = document.getElementById("run-btn");
+const ticketIn  = document.getElementById("ticket-input");
+const modeSel   = document.getElementById("mode-select");
+const msgEl     = document.getElementById("launch-msg");
+const filterEl  = document.getElementById("filter");
+const errOnlyEl = document.getElementById("errors-only");
+const followEl  = document.getElementById("autoscroll");
+
+const state = {};
+COLUMNS.forEach(c => c.stages.forEach(s => state[s.key] = "idle"));
+const stageKeys = Object.keys(state);
+
+function renderTrack() {
+  let n = 0;
+  trackEl.innerHTML = COLUMNS.map(col => {
+    n += 1;
+    const num = String(n).padStart(2, "0");
+    const stages = col.stages.map(s => `
+      <div class="stage" data-state="${state[s.key]}">
+        <span class="num">${num}</span>
+        <div class="name">${s.label}</div>
+        <div class="status">${state[s.key]}</div>
+      </div>`).join("");
+    return `<div class="col${col.parallel ? " parallel" : ""}">${stages}</div>`;
+  }).join("");
+}
+renderTrack();
+
+/* ------------------------------------------------------------ event log */
+
+let lastTs = null;
+let seenAny = false;
+
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
+const isErr = s => /error|fail|reject|blocked/i.test(s || "");
+
+function applyEvent(ev) {
+  const agent = ev.agent_type || "";
+  if (!stageKeys.includes(agent)) return;
+  if (ev.event === "SubagentStart") state[agent] = "running";
+  if (ev.event === "SubagentStop")  state[agent] = isErr(ev.summary) ? "failed" : "done";
+}
+
+function matchesFilter(row) {
+  const q = filterEl.value.trim().toLowerCase();
+  if (errOnlyEl.checked && row.dataset.err !== "1") return false;
+  if (!q) return true;
+  return row.textContent.toLowerCase().includes(q);
+}
+
+function applyFilter() {
+  logEl.querySelectorAll(".row").forEach(r => r.classList.toggle("hidden", !matchesFilter(r)));
+}
+filterEl.addEventListener("input", applyFilter);
+errOnlyEl.addEventListener("change", applyFilter);
+
+function appendLog(events) {
+  if (!events.length) return;
+  if (!seenAny) { logEl.innerHTML = ""; seenAny = true; }
+  const frag = document.createDocumentFragment();
+  events.forEach(ev => {
+    applyEvent(ev);
+    const err = isErr(ev.summary);
+    const row = document.createElement("div");
+    row.className = "row";
+    row.dataset.err = err ? "1" : "0";
+    const time  = document.createElement("div"); time.className = "t"; time.textContent = fmtTime(ev.ts);
+    const agent = document.createElement("div"); agent.className = "a"; agent.textContent = ev.agent_type || ev.tool_name || "-";
+    const summ  = document.createElement("div"); summ.className = "s" + (err ? " err" : ""); summ.textContent = ev.summary || "";
+    row.append(time, agent, summ);
+    if (!matchesFilter(row)) row.classList.add("hidden");
+    frag.appendChild(row);
+  });
+  logEl.appendChild(frag);
+  if (followEl.checked) logEl.scrollTop = logEl.scrollHeight;
+  renderTrack();
+}
+
+async function pollEvents() {
+  try {
+    const url = "/api/events" + (lastTs ? `?since=${encodeURIComponent(lastTs)}` : "");
+    const data = await (await fetch(url)).json();
+    const events = data.events || [];
+    if (events.length) {
+      lastTs = events[events.length - 1].ts;
+      appendLog(events);
+    }
+    if (data.ticket) ticketEl.textContent = data.ticket;
+    connEl.textContent = "live";
+    connEl.classList.add("live");
+  } catch {
+    connEl.textContent = "disconnected — retrying…";
+    connEl.classList.remove("live");
+  }
+  setTimeout(pollEvents, 2000);
+}
+pollEvents();
+
+/* ----------------------------------------------------------------- runs */
+
+const openTails = new Set();
+
+function elapsed(run) {
+  const start = new Date(run.started).getTime();
+  const end = run.ended ? new Date(run.ended).getTime() : Date.now();
+  const secs = Math.max(0, Math.round((end - start) / 1000));
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return m ? `${m}m ${s}s` : `${s}s`;
+}
+
+function renderRuns(runs) {
+  runsWrap.style.display = runs.length ? "" : "none";
+  runsEl.innerHTML = "";
+  runs.forEach(run => {
+    const el = document.createElement("div");
+    el.className = "run";
+    el.dataset.status = run.status;
+
+    const ticket = document.createElement("div"); ticket.className = "rt"; ticket.textContent = run.ticket;
+    const status = document.createElement("div"); status.className = "rs";
+    status.textContent = run.status + (run.exit_code ? ` (${run.exit_code})` : "");
+    const meta = document.createElement("div"); meta.className = "rm";
+    const mode = run.autonomous === true ? "autonomous" : run.autonomous === false ? "supervised" : "default mode";
+    meta.textContent = `${elapsed(run)} · ${mode} · ${run.log}`;
+
+    const tailBtn = document.createElement("button");
+    tailBtn.className = "ghost";
+    tailBtn.textContent = openTails.has(run.id) ? "hide output" : "output";
+    tailBtn.onclick = () => {
+      openTails.has(run.id) ? openTails.delete(run.id) : openTails.add(run.id);
+      pollRuns();
+    };
+
+    el.append(ticket, status, meta, tailBtn);
+
+    if (run.status === "running") {
+      const stopBtn = document.createElement("button");
+      stopBtn.className = "danger";
+      stopBtn.textContent = "stop";
+      stopBtn.onclick = async () => {
+        stopBtn.disabled = true;
+        await fetch("/api/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: run.id }),
+        });
+        pollRuns();
+      };
+      el.append(stopBtn);
+    }
+
+    runsEl.appendChild(el);
+
+    if (openTails.has(run.id)) {
+      const tail = document.createElement("div");
+      tail.className = "run-tail";
+      tail.textContent = "loading…";
+      runsEl.appendChild(tail);
+      fetch(`/api/run-log?id=${encodeURIComponent(run.id)}`)
+        .then(r => r.json())
+        .then(d => { tail.textContent = (d.tail || "").trim() || "(no output yet)"; })
+        .catch(() => { tail.textContent = "(could not read log)"; });
+    }
+  });
+}
+
+async function pollRuns() {
+  try {
+    const data = await (await fetch("/api/runs")).json();
+    renderRuns(data.runs || []);
+    if (!data.claude_available) {
+      runBtn.disabled = true;
+      msgEl.className = "err";
+      msgEl.textContent = "`claude` CLI not found on PATH — runs can't be launched from here.";
+    }
+  } catch { /* connection banner already covers this */ }
+}
+setInterval(pollRuns, 3000);
+pollRuns();
+
+/* ------------------------------------------------------------- launcher */
+
+async function launch() {
+  const ticket = ticketIn.value.trim().toUpperCase();
+  if (!ticket) { msgEl.className = "err"; msgEl.textContent = "Enter a ticket ID."; return; }
+
+  const mode = modeSel.value;
+  const autonomous = mode === "autonomous" ? true : mode === "supervised" ? false : null;
+
+  runBtn.disabled = true;
+  msgEl.className = "";
+  msgEl.textContent = "starting…";
+  try {
+    const res = await fetch("/api/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticket, autonomous }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msgEl.className = "err";
+      msgEl.textContent = data.error || "Failed to start run.";
+    } else {
+      msgEl.className = "ok";
+      msgEl.textContent = `Started ${data.run.ticket} (pid ${data.run.pid}). Events appear below as agents spawn.`;
+      ticketIn.value = "";
+      // A new run starts from a clean board.
+      stageKeys.forEach(k => state[k] = "idle");
+      renderTrack();
+      pollRuns();
+    }
+  } catch {
+    msgEl.className = "err";
+    msgEl.textContent = "Could not reach the dashboard server.";
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+runBtn.addEventListener("click", launch);
+ticketIn.addEventListener("keydown", e => { if (e.key === "Enter") launch(); });
+</script>
+
+</body>
+</html>

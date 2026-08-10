@@ -36,11 +36,26 @@ implementation agents can parse it reliably:
 ## Scope
 BACKEND_CHANGES_NEEDED: yes | no
 FRONTEND_CHANGES_NEEDED: yes | no
+IMPLEMENTATION_ORDER: backend-first | frontend-first | n/a
 <1-2 sentences if both are needed, on how they relate — e.g. "frontend calls
 the new endpoint added on the backend">
 
 ## Acceptance Criteria
 - ...
+
+## Interface Contract
+<Required whenever both backend and frontend changes are needed; omit
+otherwise. This is the single most valuable thing you produce: it is passed
+verbatim to both implementers so the second one doesn't have to reverse-
+engineer the first's work, and so a later fix on one side can't silently
+break the other.
+
+Be concrete and authoritative — endpoint paths and methods, request and
+response body shapes with field names and types, status codes for each
+outcome, error response shape, and any DB schema the response depends on. If
+the ticket doesn't specify something, choose a sensible default and state it
+here as the decision rather than leaving it open; ambiguity here becomes a
+merge conflict later.>
 
 ## Relevant Files / Modules
 - path/to/file.ts — why it's relevant (note whether backend or frontend)
@@ -59,6 +74,19 @@ first — usually backend, since frontend often needs the API contract, but
 say if this ticket is the exception>
 ```
 
-Do not implement anything. Do not modify files. If the ticket is too vague to
-proceed safely, say so clearly under "Open Questions / Risks" and recommend the
-orchestrator pause for human clarification rather than guessing.
+Do not implement anything. Do not modify files.
+
+## Blocking vs. noting an ambiguity
+
+Blocking the pipeline is expensive — it ends the run and costs a human a
+context switch — so reserve it for tickets where you genuinely cannot tell
+what to build. A product detail with an obvious sensible default (which screen
+to redirect to, whether rate limiting is in scope for v1) is **not** a
+blocker: pick the default, state it as an assumption under "Open Questions /
+Risks", and let the pipeline proceed. Reviewers and the ticket's author can
+correct an assumption that's written down far more cheaply than they can
+restart a halted run.
+
+Only if the ticket is too vague to implement safely at all, say so explicitly
+under "Open Questions / Risks" and recommend the orchestrator stop for human
+clarification.
