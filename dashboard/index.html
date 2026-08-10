@@ -230,14 +230,14 @@
 <div class="section-label">Start a run</div>
 <div class="launcher">
   <div class="launcher-row">
-    <input type="text" id="ticket-input" placeholder="PROJ-123" autocomplete="off" spellcheck="false" />
+    <input type="text" id="ticket-input" placeholder="PROJ-123 or docs/requirements/feature.md" autocomplete="off" spellcheck="false" />
     <select id="mode-select" title="Overrides AUTONOMOUS_MODE for this run only">
       <option value="default">Use CLAUDE.md default</option>
       <option value="autonomous">Autonomous — merge without asking</option>
       <option value="supervised">Supervised — stop before merge</option>
     </select>
     <button id="run-btn">Run pipeline</button>
-    <span class="hint">spawns <code>claude -p "/run-pipeline &lt;ticket&gt;"</code> in the project root</span>
+    <span class="hint">spawns <code>claude -p "/run-pipeline &lt;target&gt;"</code> in the project root — a ticket ID, or a requirement doc path for a BA-first run</span>
   </div>
   <div id="launch-msg"></div>
 </div>
@@ -260,8 +260,11 @@
 <script>
 // Review and QA run concurrently as one gate — the track renders that shape
 // rather than implying a six-step queue.
+// BA only appears on requirements-mode runs; on a ticket-ID run its stage
+// simply never fires and stays idle.
 const COLUMNS = [
   { label: "Orchestrator", stages: [{ key: "orchestrator-agent", label: "Orchestrator" }] },
+  { label: "BA",           stages: [{ key: "ba-agent",           label: "BA" }] },
   { label: "Research",     stages: [{ key: "research-agent",     label: "Research" }] },
   { label: "Implement",    stages: [{ key: "backend-agent",      label: "Backend" },
                                     { key: "frontend-agent",     label: "Frontend" }], parallel: true },
@@ -458,8 +461,12 @@ pollRuns();
 /* ------------------------------------------------------------- launcher */
 
 async function launch() {
-  const ticket = ticketIn.value.trim().toUpperCase();
-  if (!ticket) { msgEl.className = "err"; msgEl.textContent = "Enter a ticket ID."; return; }
+  const raw = ticketIn.value.trim();
+  // A document path is case-sensitive; a ticket ID isn't, so only upper-case
+  // the latter.
+  const isDoc = raw.includes("/") || raw.toLowerCase().endsWith(".md");
+  const ticket = isDoc ? raw : raw.toUpperCase();
+  if (!ticket) { msgEl.className = "err"; msgEl.textContent = "Enter a ticket ID or a requirement doc path."; return; }
 
   const mode = modeSel.value;
   const autonomous = mode === "autonomous" ? true : mode === "supervised" ? false : null;

@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Registers all MCP server connections for the 6-account agentic pipeline.
+REM Registers all MCP server connections for the 7-account agentic pipeline.
 REM
-REM Jira auth: OAuth, not API tokens. The three Jira servers are registered
+REM Jira auth: OAuth, not API tokens. The four Jira servers are registered
 REM with no Authorization header; Claude Code runs the Atlassian OAuth flow on
 REM first connect. After this script finishes, start 'claude', run '/mcp' and
 REM Authenticate each Jira alias in turn, completing the browser consent while
@@ -100,7 +100,7 @@ REM Code treat the server as OAuth and offer Authenticate in /mcp.
 REM 'mcp add' won't overwrite an existing registration, and a leftover one from
 REM the old API-token setup still carries its Authorization header - which
 REM suppresses the OAuth flow. Drop it first; a "not found" here is harmless.
-for %%S in (jira-orchestrator jira-research jira-qa) do (
+for %%S in (jira-orchestrator jira-ba jira-research jira-qa) do (
     call claude mcp remove %%S >nul 2>&1
     call claude mcp add --transport http %%S https://mcp.atlassian.com/v1/mcp
     if errorlevel 1 goto :error
@@ -110,10 +110,11 @@ echo == Verifying ==
 call claude mcp list
 
 echo.
-echo Next: the three Jira servers are registered but NOT yet authenticated.
+echo Next: the four Jira servers are registered but NOT yet authenticated.
 echo Run 'claude', then '/mcp', and Authenticate each one in turn - each in a
 echo private window logged into that bot's Atlassian account:
 echo   jira-orchestrator -^> pipeline-orchestrator-bot
+echo   jira-ba           -^> pipeline-ba-bot (requirements mode only)
 echo   jira-research     -^> pipeline-research-bot
 echo   jira-qa           -^> pipeline-qa-bot
 echo.

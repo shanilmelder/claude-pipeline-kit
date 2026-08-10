@@ -10,12 +10,12 @@ runtime.
 
 **If you are the top-level Claude Code session** (not a subagent): your only
 job regarding this pipeline is to spawn `orchestrator-agent` via the Task tool
-whenever a person gives you a ticket ID or asks to run the pipeline, passing
-along the ticket ID and any explicit overrides they mentioned (e.g. autonomous
-mode for this run). Wait for it to finish, then relay its final summary. Do
-not perform any pipeline step yourself, and do not read the rest of this file
-as instructions for yourself — the sections below describe
-`orchestrator-agent`'s job.
+whenever a person gives you a ticket ID, a requirement document, or asks to
+run the pipeline, passing along what they gave you and any explicit overrides
+they mentioned (e.g. autonomous mode for this run). Wait for it to finish,
+then relay its final summary. Do not perform any pipeline step yourself, and
+do not read the rest of this file as instructions for yourself — the sections
+below describe `orchestrator-agent`'s job.
 
 Requires nested subagent support (Claude Code v2.1.172+). If your version
 doesn't support a subagent spawning subagents, `orchestrator-agent` will fail
@@ -32,6 +32,9 @@ dashboard/server.py`, see `dashboard/README.md`.
 
 ```
 AUTONOMOUS_MODE: true
+REQUIREMENTS_MODE: false
+REQUIREMENTS_DOC: docs/requirements/current.md
+JIRA_PROJECT_KEY: PROJ
 REVIEWER_BOT_GITHUB_USERNAME: revieweragent2
 QA_BOT_GITHUB_USERNAME: qaagent3
 ```
@@ -42,6 +45,19 @@ human check-in and merges once the gate passes. A person can override it for a
 single run by saying so explicitly ("run PROJ-123 fully autonomously" forces it
 on; "check with me before merging" forces it off). Read the caution in
 `docs/PIPELINE-SETUP.md` before enabling it on a shared repo.
+
+`REQUIREMENTS_MODE` selects what a run starts from. When `false` (the
+default), a run starts from a Jira ticket ID and step 0 is skipped entirely.
+When `true`, a run starts from a **user requirement document** on disk:
+`ba-agent` reads it, breaks it into Jira stories, and the normal pipeline then
+runs once per story. It is also overridable per run — pointing at a document
+("run the pipeline on `docs/requirements/checkout.md`") forces it on for that
+run, and giving a ticket ID forces it off, whatever the config says. A run is
+never both: a ticket ID means the story already exists.
+
+`REQUIREMENTS_DOC` is the document `ba-agent` reads when requirements mode is
+on and no path was given for the run. `JIRA_PROJECT_KEY` is the project
+`ba-agent` creates stories in; both are ignored when requirements mode is off.
 
 ## Tech Stack
 
@@ -80,6 +96,7 @@ a specific bot account.
 | Role | GitHub alias | Jira alias | Used for |
 |---|---|---|---|
 | orchestrator-agent | `github-orchestrator` | `jira-orchestrator` | merging PRs, all status transitions, summary comments |
+| ba-agent | — | `jira-ba` | creating and linking stories from a requirement doc (requirements mode only) |
 | research-agent | — | `jira-research` | reading ticket/context only |
 | backend-agent | `github-backend` | — | branch, commit, open/update PR (backend) |
 | frontend-agent | `github-frontend` | — | branch, commit, open/update PR (frontend) |
@@ -96,6 +113,8 @@ transitions, and comments.
 ## Subagents available
 
 - `orchestrator-agent` — this file's audience; spawns everything below
+- `ba-agent` — splits a user requirement doc into Jira stories (requirements
+  mode only; never runs on a ticket-ID run)
 - `research-agent` — investigates ticket + codebase, produces a brief
 - `backend-agent` — implements backend/API changes
 - `frontend-agent` — implements frontend/UI changes
@@ -123,7 +142,29 @@ Status flow: `To Do → In Progress → In Review → Done`
 
 ## Pipeline
 
-Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"):
+Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"), start at step 1.
+Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
+
+0. **Requirements mode only.** Resolve the document path — the one given for
+   this run, else `REQUIREMENTS_DOC`. Spawn `ba-agent` with that path and
+   `JIRA_PROJECT_KEY`. It reads the document, creates the stories in Jira, and
+   returns `## Stories` and `## Execution Order`.
+   - If it returns `BLOCKED: yes`, stop and report — no stories exist, so
+     there is nothing to run. Do not invent stories yourself.
+   - Otherwise take `## Execution Order` and run **steps 1–8 in full, once per
+     story, one story at a time, in that order**. Each story is an ordinary
+     ticket-ID run from step 1 onward; nothing below changes.
+   - Stories run sequentially, not in parallel, even when `## Stories` marks
+     them independent: they share one repo and one main branch, and a second
+     story branched before the first merged is a rebase you'd have to babysit.
+     Each story starts from freshly-merged `main`.
+   - The retry cap is **per story**, not per run. A story that hits the cap
+     stops that story only — leave its ticket at `In Progress`, report it, and
+     continue with the next story in the order, unless it `DEPENDS_ON` the
+     failed one, in which case skip that dependent too and say so.
+   - Report at the end of the whole run: one line per story — key, final Jira
+     status, PR link, outcome — plus `ba-agent`'s `## Notes for the
+     Orchestrator` and anything it flagged.
 
 1. Fetch the ticket to confirm it exists and get its description and status.
    In the same step, fetch the workflow's transition IDs (see above).
@@ -188,8 +229,9 @@ Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"):
 ## Rules
 
 - Never let a subagent merge a PR or transition the Jira ticket — those stay
-  with you. reviewer-agent and qa-agent DO submit real GitHub reviews under
-  their own accounts; that's intentional. backend-agent and frontend-agent
+  with you. `ba-agent` is the one subagent that *creates* Jira issues; it
+  still never transitions them. reviewer-agent and qa-agent DO submit real
+  GitHub reviews under their own accounts; that's intentional. backend-agent and frontend-agent
   must never approve or review their own or each other's PR.
 - Always pass full context explicitly in each subagent prompt — ticket text,
   acceptance criteria, branch name, PR number, head SHA, prior feedback, the

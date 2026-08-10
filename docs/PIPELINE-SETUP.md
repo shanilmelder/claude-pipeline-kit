@@ -10,6 +10,7 @@ matter once shouldn't be paid for on every LLM call in the pipeline.
 Create real, separate accounts on both GitHub and Jira:
 
 - `pipeline-orchestrator-bot`
+- `pipeline-ba-bot` (Jira only; requirements mode only — see §5)
 - `pipeline-backend-bot`
 - `pipeline-frontend-bot`
 - `pipeline-reviewer-bot`
@@ -20,6 +21,7 @@ Give each the minimum permissions its role actually needs:
 | Account | GitHub | Jira |
 |---|---|---|
 | orchestrator | `Contents: read`, `Pull requests: write` (merge) | transition + comment |
+| ba | — | create + link issues (never transition) |
 | backend | `Contents: write`, `Pull requests: write` | — |
 | frontend | `Contents: write`, `Pull requests: write` | — |
 | reviewer | `Pull requests: write` only — never `Contents: write` | — |
@@ -50,6 +52,7 @@ claude mcp add --transport http github-qa https://api.githubcopilot.com/mcp \
 # Jira: no Authorization header. Omitting it is what makes Claude Code treat
 # the server as OAuth and offer Authenticate in /mcp.
 claude mcp add --transport http jira-orchestrator https://mcp.atlassian.com/v1/mcp
+claude mcp add --transport http jira-ba https://mcp.atlassian.com/v1/mcp
 claude mcp add --transport http jira-research https://mcp.atlassian.com/v1/mcp
 claude mcp add --transport http jira-qa https://mcp.atlassian.com/v1/mcp
 ```
@@ -66,21 +69,22 @@ consent screen, and the resulting OAuth grant is stored and auto-refreshed by
 Claude Code.
 
 The identity you get is whichever Atlassian account that browser is logged
-into, and a browser holds only one Atlassian session at a time. So do the
-three one at a time, each in a fresh private/incognito window (or its own
-browser profile):
+into, and a browser holds only one Atlassian session at a time. So do them one
+at a time, each in a fresh private/incognito window (or its own browser
+profile):
 
 | Alias | Authenticate as | Needs |
 |---|---|---|
 | `jira-orchestrator` | `pipeline-orchestrator-bot` | transition issues, comment |
+| `jira-ba` | `pipeline-ba-bot` | create + link issues (requirements mode only) |
 | `jira-research` | `pipeline-research-bot` | view/search issues |
 | `jira-qa` | `pipeline-qa-bot` | view issues |
 
-Authenticating all three from whatever account happened to be logged in is the
-easy mistake, and it silently collapses the identity separation the six-account
-setup exists to provide — every Jira action then lands under one name. Verify
-in `/mcp` (or by calling `atlassianUserInfo` on each alias) that the three
-report different accounts.
+Authenticating them all from whatever account happened to be logged in is the
+easy mistake, and it silently collapses the identity separation the
+seven-account setup exists to provide — every Jira action then lands under one
+name. Verify in `/mcp` (or by calling `atlassianUserInfo` on each alias) that
+they report different accounts.
 
 Grant each bot's Jira permissions in Jira itself — OAuth consent gives the
 server access to what that account can already do, it doesn't widen it. Unlike
@@ -117,7 +121,37 @@ routinely. Without it, an autonomous run stalls on permission prompts with
 nobody watching — which is the most common way these runs "hang". Re-run
 `/fewer-permission-prompts` after any change to agent tool lists.
 
-## 5. Dashboard
+## 5. Requirements mode (optional)
+
+By default a run starts from a Jira ticket that a human already wrote. In
+requirements mode it starts from a **user requirement document** in the repo:
+`ba-agent` reads it, splits it into Jira stories under `JIRA_PROJECT_KEY`, and
+the orchestrator then runs the normal pipeline once per story, sequentially.
+
+To enable it:
+
+1. Provision `pipeline-ba-bot` and register + authenticate `jira-ba` (§1, §2).
+   The account needs permission to **create** issues in the target project —
+   and deliberately not to transition them; status stays with the
+   orchestrator.
+2. Set `JIRA_PROJECT_KEY` in `CLAUDE.md` to the project stories land in.
+3. Either set `REQUIREMENTS_MODE: true` and point `REQUIREMENTS_DOC` at your
+   document, or leave the flag `false` and turn it on per run by naming a
+   document: `/run-pipeline docs/requirements/checkout.md`.
+
+Requirement documents are ordinary Markdown — `ba-agent` reads whatever
+structure you give it. The more concrete the acceptance criteria in the
+document, the less the BA has to assume; whatever it does assume comes back
+under `## Notes for the Orchestrator`.
+
+Worth knowing before you turn it on: this is the one mode where the pipeline
+creates Jira issues on its own. A vague document produces a lot of stories,
+and with `AUTONOMOUS_MODE: true` as well, each of those stories can reach a
+merge with no human in the loop at any point — including the point where the
+work was defined. Run the first document with `AUTONOMOUS_MODE` off, or
+review the created stories before the implementation passes get far.
+
+## 6. Dashboard
 
 `python3 dashboard/server.py` — see `dashboard/README.md`. It reads
 `.claude/pipeline-status.jsonl`, written by the hooks in

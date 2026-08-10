@@ -41,6 +41,12 @@ STATIC_DIR = os.path.dirname(os.path.abspath(__file__))
 # reaches a subprocess argument, so it is validated rather than escaped.
 TICKET_RE = re.compile(r"^[A-Z][A-Z0-9]{1,9}-\d{1,6}$")
 
+# The other accepted target: a requirements-mode run, given as a relative path
+# to a Markdown document in this repo. Held to the same standard as TICKET_RE —
+# a conservative character class, plus a resolved-path check below that the
+# file really is inside the repo and really exists.
+DOC_RE = re.compile(r"^[A-Za-z0-9._/-]+\.md$")
+
 # Extra flags for the spawned CLI, e.g. PIPELINE_CLAUDE_ARGS="--model opus".
 EXTRA_ARGS = os.environ.get("PIPELINE_CLAUDE_ARGS", "").split()
 
@@ -127,10 +133,33 @@ def _reap():
                 run["ended"] = datetime.now(timezone.utc).isoformat()
 
 
+def validate_target(target):
+    """Classify a run target. Returns (kind, error) where kind is 'ticket' or 'doc'.
+
+    A ticket ID starts an ordinary run. A Markdown path starts a
+    requirements-mode run, where ba-agent splits the document into stories
+    first. Everything else is rejected — this value becomes a subprocess
+    argument.
+    """
+    target = target or ""
+    if TICKET_RE.match(target):
+        return "ticket", None
+    if not DOC_RE.match(target) or ".." in target.split("/"):
+        return None, ("Invalid target. Expected a ticket ID like PROJ-123, or a "
+                      "path to a requirement document like docs/requirements/x.md.")
+    resolved = os.path.realpath(os.path.join(ROOT, target))
+    if os.path.commonpath([resolved, os.path.realpath(ROOT)]) != os.path.realpath(ROOT):
+        return None, "Requirement document must be inside the project directory."
+    if not os.path.isfile(resolved):
+        return None, f"Requirement document not found: {target}"
+    return "doc", None
+
+
 def start_run(ticket, autonomous=None):
     """Spawn a headless pipeline run. Returns (run_dict, error_message)."""
-    if not TICKET_RE.match(ticket or ""):
-        return None, "Invalid ticket ID. Expected something like PROJ-123."
+    kind, err = validate_target(ticket)
+    if err:
+        return None, err
 
     binary = claude_binary()
     if not binary:
@@ -150,7 +179,10 @@ def start_run(ticket, autonomous=None):
 
     os.makedirs(RUN_LOG_DIR, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    run_id = f"{ticket}-{stamp}"
+    # A doc target contains slashes and a .md suffix; the run id becomes a
+    # filename, so flatten it.
+    slug = ticket if kind == "ticket" else re.sub(r"[^A-Za-z0-9]+", "-", ticket[:-3]).strip("-")
+    run_id = f"{slug}-{stamp}"
     log_path = os.path.join(RUN_LOG_DIR, f"{run_id}.log")
 
     cmd = [binary, "-p", prompt] + EXTRA_ARGS
@@ -296,7 +328,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if parsed.path == "/api/run":
             data = self._body_json()
-            ticket = (data.get("ticket") or "").strip().upper()
+            ticket = (data.get("ticket") or "").strip()
+            # Ticket IDs are case-insensitive to type; document paths are not.
+            if "/" not in ticket and not ticket.lower().endswith(".md"):
+                ticket = ticket.upper()
             autonomous = data.get("autonomous")
             if autonomous not in (True, False, None):
                 autonomous = None

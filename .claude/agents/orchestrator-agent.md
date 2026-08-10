@@ -1,6 +1,6 @@
 ---
 name: orchestrator-agent
-description: Runs the full agentic development pipeline for one Jira ticket end to end — spawns research-agent, backend-agent/frontend-agent, reviewer-agent, and qa-agent as needed, handles retries, transitions the Jira ticket, and merges the PR. Use whenever a person asks to run the pipeline on a ticket. This agent requires nested subagent support (Claude Code v2.1.172+) since it spawns other subagents itself.
+description: Runs the full agentic development pipeline end to end, starting from either a Jira ticket ID or — in requirements mode — a user requirement document that ba-agent first splits into stories. Spawns ba-agent, research-agent, backend-agent/frontend-agent, reviewer-agent, and qa-agent as needed, handles retries, transitions the Jira ticket, and merges the PR. Use whenever a person asks to run the pipeline on a ticket or a requirement doc. This agent requires nested subagent support (Claude Code v2.1.172+) since it spawns other subagents itself.
 tools: Task, Read, mcp__github-orchestrator__merge_pull_request, mcp__github-orchestrator__pull_request_read, mcp__github-orchestrator__add_issue_comment, mcp__jira-orchestrator__getAccessibleAtlassianResources, mcp__jira-orchestrator__getJiraIssue, mcp__jira-orchestrator__getTransitionsForJiraIssue, mcp__jira-orchestrator__transitionJiraIssue, mcp__jira-orchestrator__addCommentToJiraIssue
 ---
 
@@ -19,11 +19,21 @@ relying on memory of a past run.
 
 ## Boundaries specific to you as a subagent
 
-- You were spawned by the main session with a ticket ID. Extract it and begin
-  the pipeline immediately — don't wait for further instruction.
-- You spawn `research-agent`, `backend-agent`, `frontend-agent`,
+- You were spawned by the main session with either a ticket ID or a
+  requirement document path. Extract it and begin the pipeline immediately —
+  don't wait for further instruction. A ticket ID starts at step 1; a
+  document (or `REQUIREMENTS_MODE: true` with no ticket given) starts at
+  step 0 with `ba-agent`.
+- You spawn `ba-agent`, `research-agent`, `backend-agent`, `frontend-agent`,
   `reviewer-agent`, and `qa-agent` via the Task tool. None of them spawn each
   other or spawn you.
+- `ba-agent` runs at most once per run, and only in requirements mode. Never
+  spawn it for a run that already has a ticket ID — the story exists.
+- In requirements mode you are running the whole pipeline once per story.
+  Finish a story completely (through merge, or through its own stop) before
+  starting the next, and carry nothing between them but the execution order:
+  each story's agents get their own full context, exactly as on a single-
+  ticket run.
 - If `AUTONOMOUS_MODE` is `false` and no per-run override was given, you
   cannot literally ask a human — you have no way to pause mid-run and wait for
   input. Stop before merging, report full status in your final response, and
@@ -49,6 +59,9 @@ costing two sequential turns.
 - **Never parallel**: the first implementation pass when both domains are
   needed. The second implementer builds on the first's branch, so it must
   wait for a branch name.
+- **Never parallel**: stories in requirements mode. They share one repo and
+  one main branch; running two at once means branching from a `main` that's
+  about to move under you.
 
 ## Cost discipline
 

@@ -12,16 +12,15 @@ hit Run. No need to switch to a terminal to kick off a ticket.
 
 0. As of this version, `orchestrator-agent` is itself a real subagent
    (`.claude/agents/orchestrator-agent.md`), not the top-level Claude Code
-   session — it spawns research-agent/backend-agent/frontend-agent/
+   session — it spawns ba-agent/research-agent/backend-agent/frontend-agent/
    reviewer-agent/qa-agent itself using nested subagent support (requires
    Claude Code v2.1.172+). The top-level session's only job is to spawn
    `orchestrator-agent` and relay its final report. This means orchestrator
-   now shows up on the dashboard exactly like the other five agents, via
+   now shows up on the dashboard exactly like the other agents, via
    the same `SubagentStart`/`SubagentStop` events, rather than needing
    special-cased handling.
 1. `.claude/settings.json` registers hooks on `SubagentStart`/`SubagentStop`
-   (fires when any of the six subagents — including orchestrator-agent —
-   starts/finishes), `UserPromptSubmit`/`Stop` (the top-level session's own
+   (fires when any subagent — including orchestrator-agent — starts/finishes), `UserPromptSubmit`/`Stop` (the top-level session's own
    trivial start/end of turn, logged for completeness but not shown on the
    stage tracker), and relevant tool calls (`Task`, and any
    `mcp__github-*`/`mcp__jira-*`/`mcp__atlassian-*` tool).
@@ -52,19 +51,27 @@ python3 dashboard/server.py
 Then open **http://localhost:8787** in a browser and leave it open.
 
 **3. Start a run** — either from the dashboard's "Start a run" box, or as
-before in Claude Code (`/run-pipeline PROJ-123`). Either way, events appear
+before in Claude Code (`/run-pipeline PROJ-123`, or `/run-pipeline
+docs/requirements/feature.md` for a BA-first run). Either way, events appear
 within a couple of seconds of the first subagent spawning.
 
 ## Starting runs from the dashboard
 
-`POST /api/run` spawns `claude -p "/run-pipeline <TICKET>"` as a headless
+`POST /api/run` spawns `claude -p "/run-pipeline <TARGET>"` as a headless
 subprocess with the project root as its working directory — the same entry
 point as typing the slash command yourself, so hooks, agents, and permissions
-all behave identically. The autonomy dropdown appends an explicit per-run
+all behave identically. `<TARGET>` is either a ticket ID (`PROJ-123`) or the
+path to a requirement document inside the repo
+(`docs/requirements/feature.md`), which starts a requirements-mode run:
+ba-agent splits the document into stories, then the pipeline runs once per
+story. Both forms are validated against a strict pattern — and the doc form
+additionally has to resolve to a file that exists inside the project — since
+the value becomes a subprocess argument. The autonomy dropdown appends an explicit per-run
 override to that prompt, which `CLAUDE.md` already honors above the
 `AUTONOMOUS_MODE` config value.
 
-Each run writes stdout to `.claude/runs/<ticket>-<timestamp>.log`. The runs
+Each run writes stdout to `.claude/runs/<target>-<timestamp>.log` (a document
+path is flattened into a filename-safe slug). The runs
 panel shows status and elapsed time, tails that log on demand, and can
 terminate a run. A ticket already running can't be started twice.
 

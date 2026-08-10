@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Registers all MCP server connections for the 6-account agentic pipeline.
+# Registers all MCP server connections for the 7-account agentic pipeline.
 #
 # Before running:
-#   1. Create 6 bot accounts: pipeline-orchestrator-bot, pipeline-research-bot,
-#      pipeline-backend-bot, pipeline-frontend-bot, pipeline-reviewer-bot,
-#      pipeline-qa-bot on GitHub and/or Jira per the table below.
+#   1. Create 7 bot accounts: pipeline-orchestrator-bot, pipeline-ba-bot,
+#      pipeline-research-bot, pipeline-backend-bot, pipeline-frontend-bot,
+#      pipeline-reviewer-bot, pipeline-qa-bot on GitHub and/or Jira per the
+#      table below. pipeline-ba-bot is only used in requirements mode
+#      (REQUIREMENTS_MODE in CLAUDE.md) — skip it if you always start runs
+#      from an existing ticket.
 #   2. Generate a GitHub PAT with minimum scope for each GitHub bot. Jira needs
 #      no token — it authenticates interactively via OAuth, see below.
 #   3. Copy scripts/.env.example to .env.local and fill it in, then:
@@ -14,26 +17,28 @@
 # | Bot account                    | Services  | Minimum permissions                          |
 # |---------------------------------|-----------|-----------------------------------------------|
 # | pipeline-orchestrator-bot       | GH + Jira | GH: merge PRs. Jira: transition issue status  |
+# | pipeline-ba-bot                 | Jira      | Create + link issues (no transitions)         |
 # | pipeline-research-bot           | Jira      | Read-only: view/search issues                 |
 # | pipeline-backend-bot            | GH        | Create branch, push, open/update PR (no merge)|
 # | pipeline-frontend-bot           | GH        | Create branch, push, open/update PR (no merge)|
 # | pipeline-reviewer-bot           | GH        | Read PR/diff, write reviews (no push/merge)   |
 # | pipeline-qa-bot                 | GH + Jira | Read-only both sides + submit review          |
 #
-# Jira auth: OAuth, not API tokens. The three Jira servers are registered with
+# Jira auth: OAuth, not API tokens. The four Jira servers are registered with
 # no Authorization header; Claude Code runs the Atlassian OAuth flow on first
 # connect. After this script finishes you must, per Jira alias:
 #
 #   1. Start `claude`, run `/mcp`, pick the alias, choose Authenticate.
 #   2. Complete the browser consent screen **while logged into that bot's
 #      Atlassian account** — jira-orchestrator as the orchestrator bot,
-#      jira-research as the research bot, jira-qa as the QA bot.
+#      jira-ba as the BA bot, jira-research as the research bot, jira-qa as
+#      the QA bot.
 #
 # A browser only holds one Atlassian session at a time, so authenticate the
-# three aliases one at a time, each in its own private/incognito window (or
-# separate browser profile). Authenticating all three from whichever account
-# happens to be logged in silently collapses the identity separation the six-
-# account setup exists to provide.
+# four aliases one at a time, each in its own private/incognito window (or
+# separate browser profile). Authenticating them all from whichever account
+# happens to be logged in silently collapses the identity separation the
+# seven-account setup exists to provide.
 #
 # Tokens are stored by Claude Code and refreshed automatically; re-run
 # /mcp -> Authenticate if a grant is revoked or expires.
@@ -63,7 +68,7 @@ JIRA_MCP_URL="https://mcp.atlassian.com/v1/mcp"
 
 # No -H: registering without an Authorization header is what makes Claude Code
 # treat the server as OAuth and offer Authenticate in /mcp.
-for alias in jira-orchestrator jira-research jira-qa; do
+for alias in jira-orchestrator jira-ba jira-research jira-qa; do
   # `mcp add` won't overwrite an existing registration, and a leftover one from
   # the old API-token setup still carries its Authorization header — which
   # suppresses the OAuth flow. Drop it first; ignore "not found".
@@ -75,10 +80,11 @@ echo "== Verifying =="
 claude mcp list
 
 echo
-echo "Next: the three Jira servers are registered but NOT yet authenticated."
+echo "Next: the four Jira servers are registered but NOT yet authenticated."
 echo "Run 'claude', then '/mcp', and Authenticate each one in turn — each in a"
 echo "private window logged into that bot's Atlassian account:"
 echo "  jira-orchestrator -> pipeline-orchestrator-bot"
+echo "  jira-ba           -> pipeline-ba-bot (requirements mode only)"
 echo "  jira-research     -> pipeline-research-bot"
 echo "  jira-qa           -> pipeline-qa-bot"
 echo
