@@ -6,10 +6,12 @@
 # QA worktrees (qa-agent creates ../.qa-<ticket>; this covers in-repo strays)
 .qa-*/
 
-# Secrets — scripts/.env holds the bot account PATs. Never commit it;
-# scripts/.env.example documents the shape instead.
+# Secrets — scripts/.env.local holds the bot account PATs and Jira tokens.
+# Never commit it; scripts/.env.example documents the shape instead.
 .env
+.env.*
 *.env
+!.env.example
 !*.env.example
 
 # Build output

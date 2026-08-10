@@ -5,10 +5,10 @@
 #   1. Create 6 bot accounts: pipeline-orchestrator-bot, pipeline-research-bot,
 #      pipeline-backend-bot, pipeline-frontend-bot, pipeline-reviewer-bot,
 #      pipeline-qa-bot on GitHub and/or Jira per the table below.
-#   2. Generate a token for each (GitHub: PAT with minimum scope; Jira/Atlassian:
-#      OAuth or API token per your org's setup).
-#   3. Fill in the placeholder tokens below, or export them as env vars first
-#      and reference $VAR_NAME instead of pasting tokens into this file.
+#   2. Generate a GitHub PAT with minimum scope for each GitHub bot. Jira needs
+#      no token — it authenticates interactively via OAuth, see below.
+#   3. Copy scripts/.env.example to .env.local and fill it in, then:
+#        set -a; source .env.local; set +a
 #   4. Run: bash scripts/setup-mcp-servers.sh
 #
 # | Bot account                    | Services  | Minimum permissions                          |
@@ -19,6 +19,24 @@
 # | pipeline-frontend-bot           | GH        | Create branch, push, open/update PR (no merge)|
 # | pipeline-reviewer-bot           | GH        | Read PR/diff, write reviews (no push/merge)   |
 # | pipeline-qa-bot                 | GH + Jira | Read-only both sides + submit review          |
+#
+# Jira auth: OAuth, not API tokens. The three Jira servers are registered with
+# no Authorization header; Claude Code runs the Atlassian OAuth flow on first
+# connect. After this script finishes you must, per Jira alias:
+#
+#   1. Start `claude`, run `/mcp`, pick the alias, choose Authenticate.
+#   2. Complete the browser consent screen **while logged into that bot's
+#      Atlassian account** — jira-orchestrator as the orchestrator bot,
+#      jira-research as the research bot, jira-qa as the QA bot.
+#
+# A browser only holds one Atlassian session at a time, so authenticate the
+# three aliases one at a time, each in its own private/incognito window (or
+# separate browser profile). Authenticating all three from whichever account
+# happens to be logged in silently collapses the identity separation the six-
+# account setup exists to provide.
+#
+# Tokens are stored by Claude Code and refreshed automatically; re-run
+# /mcp -> Authenticate if a grant is revoked or expires.
 
 set -euo pipefail
 
@@ -41,18 +59,31 @@ claude mcp add --transport http github-qa https://api.githubcopilot.com/mcp \
 
 echo "== Jira / Atlassian servers =="
 
-claude mcp add --transport http jira-orchestrator https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer ${ORCHESTRATOR_BOT_JIRA_TOKEN:?set ORCHESTRATOR_BOT_JIRA_TOKEN}"
+JIRA_MCP_URL="https://mcp.atlassian.com/v1/mcp"
 
-claude mcp add --transport http jira-research https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer ${RESEARCH_BOT_JIRA_TOKEN:?set RESEARCH_BOT_JIRA_TOKEN}"
-
-claude mcp add --transport http atlassian-qa https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer ${QA_BOT_JIRA_TOKEN:?set QA_BOT_JIRA_TOKEN}"
+# No -H: registering without an Authorization header is what makes Claude Code
+# treat the server as OAuth and offer Authenticate in /mcp.
+for alias in jira-orchestrator jira-research jira-qa; do
+  # `mcp add` won't overwrite an existing registration, and a leftover one from
+  # the old API-token setup still carries its Authorization header — which
+  # suppresses the OAuth flow. Drop it first; ignore "not found".
+  claude mcp remove "$alias" >/dev/null 2>&1 || true
+  claude mcp add --transport http "$alias" "$JIRA_MCP_URL"
+done
 
 echo "== Verifying =="
 claude mcp list
 
 echo
-echo "Done. Run 'claude' then '/mcp' inside a session to confirm auth status"
-echo "on each server before trusting the pipeline to use them."
+echo "Next: the three Jira servers are registered but NOT yet authenticated."
+echo "Run 'claude', then '/mcp', and Authenticate each one in turn — each in a"
+echo "private window logged into that bot's Atlassian account:"
+echo "  jira-orchestrator -> pipeline-orchestrator-bot"
+echo "  jira-research     -> pipeline-research-bot"
+echo "  jira-qa           -> pipeline-qa-bot"
+echo
+echo "Then use '/mcp' to confirm auth status on every server before trusting"
+echo "the pipeline to use them. Check the tool"
+echo "names each Jira server exposes and make sure they match the 'tools:'"
+echo "frontmatter in .claude/agents/*.md — a name that doesn't exist is"
+echo "silently unavailable at runtime."

@@ -32,7 +32,8 @@ GitHub rather than by prompt text.
 
 ## 2. Register the MCP servers
 
-Each agent connects under a distinct alias backed by that bot's token:
+Each agent connects under a distinct alias backed by that bot's credentials —
+a PAT on the GitHub side, an OAuth grant on the Jira side:
 
 ```bash
 claude mcp add --transport http github-orchestrator https://api.githubcopilot.com/mcp \
@@ -46,18 +47,53 @@ claude mcp add --transport http github-reviewer https://api.githubcopilot.com/mc
 claude mcp add --transport http github-qa https://api.githubcopilot.com/mcp \
   -H "Authorization: Bearer QA_BOT_PAT"
 
-claude mcp add --transport http jira-orchestrator https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer ORCHESTRATOR_BOT_JIRA_TOKEN"
-claude mcp add --transport http jira-research https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer RESEARCH_BOT_JIRA_TOKEN"
-claude mcp add --transport http atlassian-qa https://mcp.atlassian.com/v1/mcp \
-  -H "Authorization: Bearer QA_BOT_JIRA_TOKEN"
+# Jira: no Authorization header. Omitting it is what makes Claude Code treat
+# the server as OAuth and offer Authenticate in /mcp.
+claude mcp add --transport http jira-orchestrator https://mcp.atlassian.com/v1/mcp
+claude mcp add --transport http jira-research https://mcp.atlassian.com/v1/mcp
+claude mcp add --transport http jira-qa https://mcp.atlassian.com/v1/mcp
 ```
 
-`scripts/setup-mcp-servers.sh` / `.bat` automate this.
+`scripts/setup-mcp-servers.sh` / `.bat` automate this — fill the GitHub PATs
+into `scripts/.env.example` (copied to `.env.local`); the Jira side needs no
+secrets in the env file at all.
+
+### Authenticating the Jira servers
+
+Registering a Jira server does not connect it. Start `claude`, run `/mcp`,
+select the alias, and choose **Authenticate** — a browser opens the Atlassian
+consent screen, and the resulting OAuth grant is stored and auto-refreshed by
+Claude Code.
+
+The identity you get is whichever Atlassian account that browser is logged
+into, and a browser holds only one Atlassian session at a time. So do the
+three one at a time, each in a fresh private/incognito window (or its own
+browser profile):
+
+| Alias | Authenticate as | Needs |
+|---|---|---|
+| `jira-orchestrator` | `pipeline-orchestrator-bot` | transition issues, comment |
+| `jira-research` | `pipeline-research-bot` | view/search issues |
+| `jira-qa` | `pipeline-qa-bot` | view issues |
+
+Authenticating all three from whatever account happened to be logged in is the
+easy mistake, and it silently collapses the identity separation the six-account
+setup exists to provide — every Jira action then lands under one name. Verify
+in `/mcp` (or by calling `atlassianUserInfo` on each alias) that the three
+report different accounts.
+
+Grant each bot's Jira permissions in Jira itself — OAuth consent gives the
+server access to what that account can already do, it doesn't widen it. Unlike
+API tokens, OAuth does not depend on your org admin enabling API-token auth for
+the Rovo MCP server, which is the main reason to prefer it here. The `/v1/sse`
+endpoint is retired as of 30 June 2026 — use `/v1/mcp`.
+
+Re-run `/mcp` → Authenticate if a grant is revoked or expires. Because the
+tokens live in Claude Code's own credential store rather than in `.env.local`,
+a fresh machine needs the OAuth flow repeated; there is no file to copy over.
 
 Jira tool names differ by server version: `jira-research` may expose
-`get_issue`/`search_issues` while `atlassian-qa` exposes the Atlassian-style
+`get_issue`/`search_issues` while `jira-qa` exposes the Atlassian-style
 `getAccessibleAtlassianResources`/`getJiraIssue` (which needs a `cloudId`
 fetched first). Check `/mcp` for what your connected servers actually expose
 rather than assuming, and update the `tools:` frontmatter in

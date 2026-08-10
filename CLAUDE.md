@@ -84,7 +84,7 @@ a specific bot account.
 | backend-agent | `github-backend` | — | branch, commit, open/update PR (backend) |
 | frontend-agent | `github-frontend` | — | branch, commit, open/update PR (frontend) |
 | reviewer-agent | `github-reviewer` | — | reading diff, submitting review, comments |
-| qa-agent | `github-qa` | `atlassian-qa` | reading PR, submitting review, reading ticket |
+| qa-agent | `github-qa` | `jira-qa` | reading PR, submitting review, reading ticket |
 
 backend-agent and frontend-agent each authenticate as themselves when pushing,
 even on a shared branch, so commit history attributes each domain's changes to

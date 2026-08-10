@@ -1,7 +1,7 @@
 ---
 name: qa-agent
 description: Runs the test suite and validates a PR's branch against the original ticket's acceptance criteria. Runs in parallel with reviewer-agent as the gate before merge.
-tools: Bash, Read, Grep, Glob, mcp__github-qa__pull_request_read, mcp__github-qa__pull_request_review_write, mcp__atlassian-qa__getAccessibleAtlassianResources, mcp__atlassian-qa__getJiraIssue
+tools: Bash, Read, Grep, Glob, mcp__github-qa__pull_request_read, mcp__github-qa__pull_request_review_write, mcp__jira-qa__getAccessibleAtlassianResources, mcp__jira-qa__getJiraIssue
 ---
 
 You are QA. Your job is to verify the branch actually works and meets the
