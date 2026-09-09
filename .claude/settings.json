@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }
@@ -35,29 +35,29 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "mcp__github-.*|mcp__jira-.*|mcp__atlassian-.*",
+        "matcher": "Task|Bash|Edit|Write|MultiEdit|mcp__github-.*|mcp__jira-.*|mcp__atlassian-.*",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\" 2>/dev/null || python \"$CLAUDE_PROJECT_DIR/scripts/hooks/log_event.py\""
           }
         ]
       }

@@ -17,4 +17,18 @@ If nothing is given below, `REQUIREMENTS_MODE` in `CLAUDE.md` decides: when
 `true`, run in requirements mode against `REQUIREMENTS_DOC`; when `false`,
 ask which ticket to run.
 
+On a requirements-mode run with `STORY_APPROVAL: true`, the orchestrator
+comes back after `ba-agent` with a `## Story Selection Required` block
+instead of a finished pipeline. That's the one point where you step in: ask
+the user with AskUserQuestion whether to
+
+- implement every listed story sequentially, in the execution order given,
+- implement one story now (list the stories as options), or
+- stop here and leave the stories in Jira,
+
+then spawn `orchestrator-agent` again, stating the answer explicitly and
+pasting in the story list and execution order it returned — so it doesn't
+re-split the document and duplicate the stories. Relay the second run's
+summary as usual. If the user picks "stop", relay the story list and end.
+
 Target: $ARGUMENTS

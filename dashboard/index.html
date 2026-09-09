@@ -8,6 +8,7 @@
     --bg: #0d1117;
     --panel: #12161f;
     --panel-2: #171c27;
+    --deep: #0b0e15;
     --line: #232a38;
     --text: #dbe2ef;
     --muted: #6b7688;
@@ -25,13 +26,14 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    padding: 32px 40px 60px;
+    padding: 28px 34px 60px;
   }
   header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
+    gap: 20px;
+    margin-bottom: 22px;
     border-bottom: 1px solid var(--line);
     padding-bottom: 16px;
   }
@@ -47,6 +49,22 @@
   #conn { font-family: var(--mono); font-size: 12px; color: var(--muted); }
   #conn.live::before { content: "●"; color: var(--done); margin-right: 6px; }
 
+  /* who is working right now */
+  #now {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 7px 16px 7px 13px;
+    font-family: var(--mono); font-size: 13px;
+  }
+  #now .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--idle); flex: none;
+  }
+  #now.busy .dot { background: var(--running); animation: blink 1.2s ease-in-out infinite; }
+  #now .who { color: var(--text); font-weight: 600; }
+  #now .doing { color: var(--muted); max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
   .section-label {
     font-size: 12px;
     letter-spacing: 0.06em;
@@ -60,8 +78,8 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 16px 18px;
-    margin-bottom: 28px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
   }
   .launcher-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   input[type="text"], select {
@@ -73,7 +91,7 @@
     padding: 8px 10px;
     border-radius: 4px;
   }
-  input[type="text"] { width: 150px; text-transform: uppercase; }
+  #ticket-input { width: 320px; }
   input[type="text"]:focus, select:focus { outline: none; border-color: var(--accent); }
   button {
     background: var(--accent);
@@ -97,6 +115,7 @@
     font-size: 12px;
   }
   button.ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+  button.ghost.on { color: var(--accent); border-color: var(--accent); }
   button.danger { background: transparent; border-color: var(--failed); color: var(--failed); font-weight: 500; padding: 5px 11px; font-size: 12px; }
   .hint { color: var(--muted); font-size: 12px; font-family: var(--mono); }
   #launch-msg { margin-top: 10px; font-family: var(--mono); font-size: 12px; }
@@ -104,13 +123,13 @@
   #launch-msg.ok { color: var(--done); }
 
   /* runs */
-  #runs { margin-bottom: 28px; }
+  #runs { margin-bottom: 22px; }
   .run {
     background: var(--panel);
     border: 1px solid var(--line);
     border-left: 3px solid var(--idle);
     border-radius: 6px;
-    padding: 11px 14px;
+    padding: 10px 13px;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -118,6 +137,7 @@
     font-family: var(--mono);
     font-size: 12.5px;
   }
+  .run.selected { border-color: var(--accent); }
   .run[data-status="running"]   { border-left-color: var(--running); }
   .run[data-status="completed"] { border-left-color: var(--done); }
   .run[data-status="failed"]    { border-left-color: var(--failed); }
@@ -129,23 +149,10 @@
   .run[data-status="failed"] .rs    { color: var(--failed); }
   .run[data-status="stopped"] .rs   { color: var(--muted); }
   .run .rm { color: var(--muted); flex: 1; }
-  .run-tail {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--muted);
-    background: #0b0e15;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 10px 12px;
-    margin: -4px 0 10px;
-    white-space: pre-wrap;
-    max-height: 200px;
-    overflow-y: auto;
-  }
 
   /* stage tracker */
-  .track { display: flex; align-items: stretch; margin-bottom: 32px; overflow-x: auto; }
-  .col { flex: 1; min-width: 132px; margin-right: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .track { display: flex; align-items: stretch; margin-bottom: 26px; overflow-x: auto; }
+  .col { flex: 1; min-width: 150px; margin-right: 10px; display: flex; flex-direction: column; gap: 8px; }
   .col:last-child { margin-right: 0; }
   .col.parallel { position: relative; }
   .col.parallel::after {
@@ -162,13 +169,19 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     position: relative;
+    min-width: 0;
   }
-  .col.parallel .stage { padding: 10px 14px; }
-  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .col.parallel .stage { padding: 10px 12px; }
+  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; margin-bottom: 5px; }
   .stage .name { font-size: 13px; font-weight: 600; }
-  .stage .status { font-family: var(--mono); font-size: 11px; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stage .status { font-family: var(--mono); font-size: 11px; margin-top: 7px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stage .doing {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .stage .meter { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 4px; }
   .stage[data-state="idle"]   { border-left: 3px solid var(--idle); }
   .stage[data-state="running"]{ border-left: 3px solid var(--running); }
   .stage[data-state="done"]   { border-left: 3px solid var(--done); }
@@ -186,24 +199,70 @@
     50% { box-shadow: 0 0 0 1px var(--running), 0 0 14px -2px var(--running); }
   }
 
-  /* log */
-  .log-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .log-bar .section-label { margin-bottom: 0; }
-  .log-bar input[type="text"] { width: 220px; text-transform: none; font-size: 12px; padding: 5px 9px; }
-  .log-bar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
-  #log {
-    font-family: var(--mono);
-    font-size: 12.5px;
+  /* two-pane main area */
+  .panes { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; margin-bottom: 26px; }
+  @media (max-width: 1100px) { .panes { grid-template-columns: 1fr; } }
+  .pane-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pane-bar .section-label { margin-bottom: 0; }
+  .pane-bar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .panel-box {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 16px 18px;
-    max-height: 460px;
+    padding: 12px 14px;
+    height: 480px;
     overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
   }
+
+  /* transcript, shaped like the CLI */
+  .tl { padding: 3px 0; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .tl .agent { font-size: 11px; letter-spacing: 0.03em; }
+  .tl.text { color: var(--text); border-left: 2px solid var(--line); padding-left: 10px; margin: 6px 0; }
+  .tl.tool { color: #9fb4d8; }
+  .tl.tool .glyph { color: var(--accent); }
+  .tl.result { color: var(--muted); padding-left: 16px; }
+  .tl.result.err { color: var(--failed); }
+  .tl.system, .tl.raw { color: var(--muted); }
+  .tl.final { color: var(--done); border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+  .tl.handoff {
+    color: var(--running);
+    background: rgba(217,164,65,0.08);
+    border-left: 2px solid var(--running);
+    padding: 5px 10px;
+    margin: 8px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .more { color: var(--accent); cursor: pointer; font-size: 11px; }
+  .more:hover { text-decoration: underline; }
+  .body-more { display: none; white-space: pre-wrap; color: var(--muted); margin-top: 6px; padding-left: 10px; border-left: 1px dashed var(--line); }
+  .body-more.open { display: block; }
+
+  /* handoffs */
+  .ho {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 9px 11px;
+    margin-bottom: 8px;
+    background: var(--panel-2);
+  }
+  .ho.inbound { border-left: 3px solid var(--done); }
+  .ho.outbound { border-left: 3px solid var(--accent); }
+  .ho.err { border-left-color: var(--failed); }
+  .ho .lane { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .ho .from { color: var(--muted); }
+  .ho .arrow { color: var(--muted); }
+  .ho .to { color: var(--text); font-weight: 600; }
+  .ho .when { color: var(--muted); font-size: 11px; margin-left: auto; }
+  .ho .desc { color: #9fb4d8; margin-top: 5px; font-size: 12px; }
+  .ho .size { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  /* log */
+  #log { max-height: 380px; }
   .row {
     display: grid;
-    grid-template-columns: 82px 150px 1fr;
+    grid-template-columns: 82px 130px 1fr;
     gap: 14px;
     padding: 4px 0;
     border-bottom: 1px solid #1a2030;
@@ -214,7 +273,7 @@
   .row .a { color: #8fa3c9; }
   .row .s { color: var(--text); word-break: break-word; }
   .row .s.err { color: var(--failed); }
-  #empty { color: var(--muted); font-family: var(--mono); font-size: 12.5px; padding: 20px 0; }
+  .empty { color: var(--muted); font-size: 12.5px; padding: 16px 0; }
 </style>
 </head>
 <body>
@@ -224,6 +283,7 @@
     <h1>Agentic Pipeline</h1>
     <div id="ticket">waiting for a run…</div>
   </div>
+  <div id="now"><span class="dot"></span><span class="who">idle</span><span class="doing"></span></div>
   <div id="conn">connecting…</div>
 </header>
 
@@ -243,19 +303,42 @@
 </div>
 
 <div id="runs-wrap" style="display:none">
-  <div class="section-label">Runs this session</div>
+  <div class="section-label">Runs this session — click one to follow its transcript</div>
   <div id="runs"></div>
 </div>
 
 <div class="track" id="track"></div>
 
-<div class="log-bar">
+<div class="panes">
+  <div>
+    <div class="pane-bar">
+      <div class="section-label">Live transcript</div>
+      <span class="hint" id="transcript-src">no run selected</span>
+      <label style="margin-left:auto"><input type="checkbox" id="show-results" checked /> tool results</label>
+      <label><input type="checkbox" id="follow-transcript" checked /> follow</label>
+    </div>
+    <div class="panel-box" id="transcript">
+      <div class="empty">Start a run from here to see the same play-by-play the CLI prints — agent prose, tool calls, and results.</div>
+    </div>
+  </div>
+  <div>
+    <div class="pane-bar">
+      <div class="section-label">Handoffs</div>
+      <span class="hint">what each agent passed on</span>
+    </div>
+    <div class="panel-box" id="handoffs">
+      <div class="empty">No handoffs yet. Each Task spawn and each report back lands here in full.</div>
+    </div>
+  </div>
+</div>
+
+<div class="pane-bar">
   <div class="section-label">Event log</div>
-  <input type="text" id="filter" placeholder="filter…" autocomplete="off" />
+  <input type="text" id="filter" placeholder="filter…" autocomplete="off" style="width:220px;font-size:12px;padding:5px 9px" />
   <label><input type="checkbox" id="errors-only" /> errors only</label>
   <label><input type="checkbox" id="autoscroll" checked /> follow</label>
 </div>
-<div id="log"><div id="empty">No events yet. Start a run above, or run the pipeline in Claude Code.</div></div>
+<div class="panel-box" id="log"><div class="empty">No events yet. Start a run above, or run the pipeline in Claude Code.</div></div>
 
 <script>
 // Review and QA run concurrently as one gate — the track renders that shape
@@ -272,54 +355,132 @@ const COLUMNS = [
                                     { key: "qa-agent",           label: "QA" }], parallel: true },
 ];
 
-const trackEl   = document.getElementById("track");
-const logEl     = document.getElementById("log");
-const connEl    = document.getElementById("conn");
-const ticketEl  = document.getElementById("ticket");
-const runsEl    = document.getElementById("runs");
-const runsWrap  = document.getElementById("runs-wrap");
-const runBtn    = document.getElementById("run-btn");
-const ticketIn  = document.getElementById("ticket-input");
-const modeSel   = document.getElementById("mode-select");
-const msgEl     = document.getElementById("launch-msg");
-const filterEl  = document.getElementById("filter");
-const errOnlyEl = document.getElementById("errors-only");
-const followEl  = document.getElementById("autoscroll");
+// Stable per-agent colour so a line's author is readable at a glance in the
+// transcript without reading the label.
+const AGENT_COLORS = {
+  "main-session":       "#8fa3c9",
+  "orchestrator-agent": "#6ea8fe",
+  "ba-agent":           "#c792ea",
+  "research-agent":     "#61c8d6",
+  "backend-agent":      "#7fd18b",
+  "frontend-agent":     "#e3a86b",
+  "reviewer-agent":     "#e0777f",
+  "qa-agent":           "#d9c05a",
+  "cli":                "#6b7688",
+};
+const colorOf = a => AGENT_COLORS[a] || "#9fb4d8";
 
-const state = {};
-COLUMNS.forEach(c => c.stages.forEach(s => state[s.key] = "idle"));
-const stageKeys = Object.keys(state);
+const $ = id => document.getElementById(id);
+const trackEl   = $("track");
+const logEl     = $("log");
+const connEl    = $("conn");
+const ticketEl  = $("ticket");
+const nowEl     = $("now");
+const runsEl    = $("runs");
+const runsWrap  = $("runs-wrap");
+const runBtn    = $("run-btn");
+const ticketIn  = $("ticket-input");
+const modeSel   = $("mode-select");
+const msgEl     = $("launch-msg");
+const filterEl  = $("filter");
+const errOnlyEl = $("errors-only");
+const followEl  = $("autoscroll");
+const transEl   = $("transcript");
+const transSrc  = $("transcript-src");
+const showRes   = $("show-results");
+const followTr  = $("follow-transcript");
+const handoffEl = $("handoffs");
+
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
+const isErr = s => /error|fail|reject|blocked/i.test(s || "");
+
+/* ------------------------------------------------------- stage tracker */
+
+let agentState = {};   // name -> record from /api/events
 
 function renderTrack() {
   let n = 0;
   trackEl.innerHTML = COLUMNS.map(col => {
     n += 1;
     const num = String(n).padStart(2, "0");
-    const stages = col.stages.map(s => `
-      <div class="stage" data-state="${state[s.key]}">
+    const stages = col.stages.map(s => {
+      const rec = agentState[s.key] || { state: "idle", last_action: "", tools: 0, errors: 0 };
+      const meter = rec.tools
+        ? `${rec.tools} tool call${rec.tools === 1 ? "" : "s"}${rec.errors ? ` · ${rec.errors} error${rec.errors === 1 ? "" : "s"}` : ""}`
+        : "";
+      return `
+      <div class="stage" data-state="${rec.state}">
         <span class="num">${num}</span>
         <div class="name">${s.label}</div>
-        <div class="status">${state[s.key]}</div>
-      </div>`).join("");
+        <div class="status">${rec.state}</div>
+        ${rec.last_action ? `<div class="doing" title="${esc(rec.last_action)}">${esc(rec.last_action)}</div>` : ""}
+        ${meter ? `<div class="meter">${meter}</div>` : ""}
+      </div>`;
+    }).join("");
     return `<div class="col${col.parallel ? " parallel" : ""}">${stages}</div>`;
   }).join("");
 }
 renderTrack();
 
+function renderNow(active) {
+  const busy = active.length > 0;
+  nowEl.classList.toggle("busy", busy);
+  const who = nowEl.querySelector(".who");
+  const doing = nowEl.querySelector(".doing");
+  if (!busy) {
+    who.textContent = "idle";
+    who.style.color = "";
+    doing.textContent = "";
+    return;
+  }
+  who.textContent = active.join("  +  ");
+  who.style.color = active.length === 1 ? colorOf(active[0]) : "";
+  const rec = agentState[active[0]];
+  doing.textContent = rec && rec.last_action ? "· " + rec.last_action : "";
+}
+
+/* ---------------------------------------------------------- handoffs */
+
+function renderHandoffs(handoffs) {
+  if (!handoffs.length) return;
+  // Rendered whole each poll: the list is short and every entry can change
+  // (a report arriving turns an outbound spawn into a closed loop).
+  const open = new Set([...handoffEl.querySelectorAll(".body-more.open")].map(e => e.dataset.k));
+  handoffEl.innerHTML = handoffs.slice().reverse().map((h, i) => {
+    const k = `${h.ts}-${i}`;
+    const inbound = h.direction === "in";
+    const label = inbound ? "reported back to" : "handed to";
+    return `
+      <div class="ho ${inbound ? "inbound" : "outbound"}${h.error ? " err" : ""}">
+        <div class="lane">
+          <span class="from" style="color:${colorOf(h.from)}">${esc(h.from)}</span>
+          <span class="arrow">${label} →</span>
+          <span class="to" style="color:${colorOf(h.to)}">${esc(h.to)}</span>
+          <span class="when">${fmtTime(h.ts)}</span>
+        </div>
+        ${h.description ? `<div class="desc">${esc(h.description)}</div>` : ""}
+        <div class="size">${h.chars.toLocaleString()} chars
+          ${h.text ? `<span class="more" data-more="${k}">${open.has(k) ? "hide" : "show"} full text</span>` : ""}
+        </div>
+        <div class="body-more${open.has(k) ? " open" : ""}" data-k="${k}">${esc(h.text)}</div>
+      </div>`;
+  }).join("");
+}
+
+document.addEventListener("click", e => {
+  const key = e.target.dataset && e.target.dataset.more;
+  if (!key) return;
+  const body = document.querySelector(`.body-more[data-k="${CSS.escape(key)}"]`);
+  if (!body) return;
+  body.classList.toggle("open");
+  e.target.textContent = body.classList.contains("open") ? "hide full text" : "show full text";
+});
+
 /* ------------------------------------------------------------ event log */
 
 let lastTs = null;
 let seenAny = false;
-
-const fmtTime = iso => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
-const isErr = s => /error|fail|reject|blocked/i.test(s || "");
-
-function applyEvent(ev) {
-  const agent = ev.agent_type || "";
-  if (!stageKeys.includes(agent)) return;
-  if (ev.event === "SubagentStart") state[agent] = "running";
-  if (ev.event === "SubagentStop")  state[agent] = isErr(ev.summary) ? "failed" : "done";
-}
 
 function matchesFilter(row) {
   const q = filterEl.value.trim().toLowerCase();
@@ -339,21 +500,22 @@ function appendLog(events) {
   if (!seenAny) { logEl.innerHTML = ""; seenAny = true; }
   const frag = document.createDocumentFragment();
   events.forEach(ev => {
-    applyEvent(ev);
-    const err = isErr(ev.summary);
+    const err = ev.error || isErr(ev.summary);
     const row = document.createElement("div");
     row.className = "row";
     row.dataset.err = err ? "1" : "0";
     const time  = document.createElement("div"); time.className = "t"; time.textContent = fmtTime(ev.ts);
-    const agent = document.createElement("div"); agent.className = "a"; agent.textContent = ev.agent_type || ev.tool_name || "-";
-    const summ  = document.createElement("div"); summ.className = "s" + (err ? " err" : ""); summ.textContent = ev.summary || "";
+    const agent = document.createElement("div"); agent.className = "a";
+    agent.textContent = ev.agent_type || ev.tool_name || "-";
+    agent.style.color = colorOf(ev.agent_type);
+    const summ  = document.createElement("div"); summ.className = "s" + (err ? " err" : "");
+    summ.textContent = ev.summary || "";
     row.append(time, agent, summ);
     if (!matchesFilter(row)) row.classList.add("hidden");
     frag.appendChild(row);
   });
   logEl.appendChild(frag);
   if (followEl.checked) logEl.scrollTop = logEl.scrollHeight;
-  renderTrack();
 }
 
 async function pollEvents() {
@@ -365,6 +527,11 @@ async function pollEvents() {
       lastTs = events[events.length - 1].ts;
       appendLog(events);
     }
+    agentState = {};
+    (data.agents || []).forEach(a => { agentState[a.name] = a; });
+    renderTrack();
+    renderNow(data.active || []);
+    renderHandoffs(data.handoffs || []);
     if (data.ticket) ticketEl.textContent = data.ticket;
     connEl.textContent = "live";
     connEl.classList.add("live");
@@ -376,9 +543,85 @@ async function pollEvents() {
 }
 pollEvents();
 
-/* ----------------------------------------------------------------- runs */
+/* -------------------------------------------------------- transcript */
 
-const openTails = new Set();
+let selectedRun = null;
+let transcriptOffset = 0;
+let transcriptSeen = false;
+
+function selectRun(id) {
+  if (selectedRun === id) return;
+  selectedRun = id;
+  transcriptOffset = 0;
+  transcriptSeen = false;
+  transEl.innerHTML = '<div class="empty">loading…</div>';
+  transSrc.textContent = id;
+  pollTranscript();
+}
+
+function transcriptLine(e) {
+  const div = document.createElement("div");
+  div.className = "tl " + e.kind + (e.error ? " err" : "");
+  const tag = `<span class="agent" style="color:${colorOf(e.agent)}">${esc(e.agent)}</span> `;
+  if (e.kind === "text") {
+    div.innerHTML = tag + esc(e.text);
+  } else if (e.kind === "tool") {
+    div.innerHTML = tag + `<span class="glyph">⏺</span> ${esc(e.text)}`;
+  } else if (e.kind === "handoff") {
+    const id = "h" + Math.random().toString(36).slice(2);
+    div.innerHTML = tag + `⇢ ${esc(e.text)}` +
+      (e.detail ? ` <span class="more" data-more="${id}">show prompt</span>
+        <div class="body-more" data-k="${id}">${esc(e.detail)}</div>` : "");
+  } else if (e.kind === "result") {
+    const text = String(e.text || "");
+    const head = text.split("\n").slice(0, 3).join("\n");
+    const id = "r" + Math.random().toString(36).slice(2);
+    div.innerHTML = `⎿ ${esc(head) || "(no output)"}` +
+      (text.length > head.length
+        ? ` <span class="more" data-more="${id}">more</span>
+            <div class="body-more" data-k="${id}">${esc(text)}</div>` : "");
+  } else {
+    div.innerHTML = esc(e.text);
+  }
+  if (e.kind === "result" && !showRes.checked) div.style.display = "none";
+  div.dataset.kind = e.kind;
+  return div;
+}
+
+showRes.addEventListener("change", () => {
+  transEl.querySelectorAll('[data-kind="result"]').forEach(el => {
+    el.style.display = showRes.checked ? "" : "none";
+  });
+});
+
+async function pollTranscript() {
+  if (!selectedRun) return;
+  try {
+    const data = await (await fetch(
+      `/api/transcript?id=${encodeURIComponent(selectedRun)}&offset=${transcriptOffset}`)).json();
+    if (data.error) return;
+    transcriptOffset = data.offset || transcriptOffset;
+    const entries = data.entries || [];
+    if (entries.length) {
+      if (!transcriptSeen) { transEl.innerHTML = ""; transcriptSeen = true; }
+      const frag = document.createDocumentFragment();
+      entries.forEach(e => frag.appendChild(transcriptLine(e)));
+      transEl.appendChild(frag);
+      if (followTr.checked) transEl.scrollTop = transEl.scrollHeight;
+    } else if (!transcriptSeen) {
+      transEl.innerHTML = '<div class="empty">waiting for the first output…</div>';
+    }
+    if (data.stats && data.stats.duration_ms) {
+      const s = data.stats;
+      transSrc.textContent = `${selectedRun} · ${Math.round(s.duration_ms / 1000)}s` +
+        (s.num_turns ? ` · ${s.num_turns} turns` : "") +
+        (s.cost_usd ? ` · $${Number(s.cost_usd).toFixed(2)}` : "");
+    }
+  } catch { /* connection banner covers it */ }
+}
+setInterval(pollTranscript, 2000);
+
+/* ----------------------------------------------------------------- runs */
 
 function elapsed(run) {
   const start = new Date(run.started).getTime();
@@ -391,10 +634,16 @@ function elapsed(run) {
 function renderRuns(runs) {
   runsWrap.style.display = runs.length ? "" : "none";
   runsEl.innerHTML = "";
+  // Following the newest run by default is what a person wants nine times
+  // out of ten; clicking another one pins it instead.
+  if (!selectedRun && runs.length) selectRun(runs[0].id);
+
   runs.forEach(run => {
     const el = document.createElement("div");
-    el.className = "run";
+    el.className = "run" + (run.id === selectedRun ? " selected" : "");
     el.dataset.status = run.status;
+    el.style.cursor = "pointer";
+    el.onclick = () => { selectRun(run.id); renderRuns(runs); };
 
     const ticket = document.createElement("div"); ticket.className = "rt"; ticket.textContent = run.ticket;
     const status = document.createElement("div"); status.className = "rs";
@@ -403,21 +652,14 @@ function renderRuns(runs) {
     const mode = run.autonomous === true ? "autonomous" : run.autonomous === false ? "supervised" : "default mode";
     meta.textContent = `${elapsed(run)} · ${mode} · ${run.log}`;
 
-    const tailBtn = document.createElement("button");
-    tailBtn.className = "ghost";
-    tailBtn.textContent = openTails.has(run.id) ? "hide output" : "output";
-    tailBtn.onclick = () => {
-      openTails.has(run.id) ? openTails.delete(run.id) : openTails.add(run.id);
-      pollRuns();
-    };
-
-    el.append(ticket, status, meta, tailBtn);
+    el.append(ticket, status, meta);
 
     if (run.status === "running") {
       const stopBtn = document.createElement("button");
       stopBtn.className = "danger";
       stopBtn.textContent = "stop";
-      stopBtn.onclick = async () => {
+      stopBtn.onclick = async e => {
+        e.stopPropagation();
         stopBtn.disabled = true;
         await fetch("/api/stop", {
           method: "POST",
@@ -428,19 +670,7 @@ function renderRuns(runs) {
       };
       el.append(stopBtn);
     }
-
     runsEl.appendChild(el);
-
-    if (openTails.has(run.id)) {
-      const tail = document.createElement("div");
-      tail.className = "run-tail";
-      tail.textContent = "loading…";
-      runsEl.appendChild(tail);
-      fetch(`/api/run-log?id=${encodeURIComponent(run.id)}`)
-        .then(r => r.json())
-        .then(d => { tail.textContent = (d.tail || "").trim() || "(no output yet)"; })
-        .catch(() => { tail.textContent = "(could not read log)"; });
-    }
   });
 }
 
@@ -452,6 +682,9 @@ async function pollRuns() {
       runBtn.disabled = true;
       msgEl.className = "err";
       msgEl.textContent = "`claude` CLI not found on PATH — runs can't be launched from here.";
+    } else if (data.stream === false) {
+      transSrc.textContent = "text output mode — live transcript disabled " +
+        "(unset PIPELINE_OUTPUT_FORMAT to enable)";
     }
   } catch { /* connection banner already covers this */ }
 }
@@ -486,11 +719,9 @@ async function launch() {
       msgEl.textContent = data.error || "Failed to start run.";
     } else {
       msgEl.className = "ok";
-      msgEl.textContent = `Started ${data.run.ticket} (pid ${data.run.pid}). Events appear below as agents spawn.`;
+      msgEl.textContent = `Started ${data.run.ticket} (pid ${data.run.pid}). Following its transcript below.`;
       ticketIn.value = "";
-      // A new run starts from a clean board.
-      stageKeys.forEach(k => state[k] = "idle");
-      renderTrack();
+      selectRun(data.run.id);
       pollRuns();
     }
   } catch {
