@@ -2,14 +2,13 @@
   "name": "claude-pipeline-kit",
   "displayName": "Agentic Development Pipeline",
   "description": "A fleet of subagents that takes a Jira ticket — or a requirement document — from intake to a merge-ready PR, with separate bot identities for research, implementation, review, QA and merge.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "shanilmelder"
   },
   "repository": "https://github.com/shanilmelder/claude-pipeline-kit",
   "license": "MIT",
   "keywords": ["jira", "github", "pipeline", "orchestration", "code-review", "qa"],
-  "hooks": "./hooks/hooks.json",
   "mcpServers": "./.mcp.json",
   "userConfig": {
     "orchestrator_bot_github_pat": {
