@@ -14,7 +14,12 @@ Set this project up to run the agentic development pipeline.
 4. Ask the person for what the repo cannot tell you — the Jira project key,
    the bot account names, and whether they want `AUTONOMOUS_MODE` on. Use
    AskUserQuestion. Leave `AUTONOMOUS_MODE: false` unless they say otherwise.
-5. Point them at `${CLAUDE_PLUGIN_ROOT}/docs/PIPELINE-SETUP.md` for the parts
+5. Copy `${CLAUDE_PLUGIN_ROOT}/config/pipeline-lessons.example.md` to
+   `.claude/pipeline-lessons.md` if that file doesn't exist yet — again,
+   never overwrite one that does. It starts empty; reviews fill it in. Tell
+   the person it is meant to stay short and to read it occasionally, since a
+   wrong rule in there is followed forever without being questioned.
+6. Point them at `${CLAUDE_PLUGIN_ROOT}/docs/PIPELINE-SETUP.md` for the parts
    that cannot be automated: creating the bot accounts, authenticating each
    Jira alias under the right account, and branch protection.
 

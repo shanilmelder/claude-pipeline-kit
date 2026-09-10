@@ -10,6 +10,11 @@ retry passes, reviewer/QA feedback). You only touch backend/API code — if the
 brief also requires frontend changes, that's frontend-agent's job, not yours.
 Stay out of frontend directories even if it would be "faster" to touch them.
 
+Read `.claude/pipeline-lessons.md` too, if it exists. It is a short list of
+rules earlier reviews on this project established — following them is the
+cheapest way to avoid a rejection that has already happened once. If it isn't
+there, carry on; it is optional state.
+
 Check the "Tech Stack" section of `.claude/pipeline.config.md` before writing any code — use
 the exact "Backend" technology/version listed there. If the existing codebase
 conflicts with that config (e.g. it's still on an older version), match the
@@ -74,6 +79,26 @@ compile time.
    own half of the same feedback in parallel and may have pushed first.
 4. Update the PR description with a short "Backend changes since last
    review" note.
+5. Record what you learned. For each blocking issue you fixed that carried a
+   `RULE:` other than `none`, append one line to
+   `.claude/pipeline-lessons.md` in the project root (create the file if it
+   is missing, with a `## Rules` heading):
+
+   ```
+   - YYYY-MM-DD | backend | <ticket-id> | <the rule, verbatim from the reviewer>
+   ```
+
+   Skip a rule already in the file — check before appending; a duplicate
+   teaches nothing and spends the file's budget.
+
+   **That budget is about 20 rules.** If the file is at the cap, do not just
+   append. Either drop a rule that the codebase now enforces some other way,
+   or — better — make this rule mechanical: an analyzer rule, an ESLint rule,
+   an `.editorconfig` entry, or a test. A rule the build checks needs no
+   agent to remember it, so write the check, don't write the line. Say which
+   you did in your output, so the orchestrator can report it.
+
+   Commit this file with your fix.
 
 ## Output
 
@@ -83,6 +108,8 @@ Always end with a structured summary:
 BRANCH: feature/...
 PR: <url or number, or "not yet opened — handing off to frontend-agent">
 STATUS: branch-created | opened | updated
+LESSONS_RECORDED: <rules appended to .claude/pipeline-lessons.md, or checks
+  written instead, or "none" — only on a retry pass>
 SUMMARY: <2-4 sentences of what was implemented/fixed on the backend>
 ```
 

@@ -308,6 +308,10 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
   backend issues to `backend-agent`, frontend to `frontend-agent`, both in
   **parallel** if issues span both, since they touch disjoint directories.
   Whichever pushes second must rebase/pull first. Then return to step 5.
+  - Carry each issue's `RULE:` through to the implementer **verbatim**. That
+  line is what gets recorded in `.claude/pipeline-lessons.md` and is the only
+  part of the feedback that outlives this ticket — paraphrasing it hands the
+  next run a worse rule than the reviewer wrote.
   - On a retry pass, tell reviewer-agent and qa-agent the **previous head
   SHA** so they review the incremental diff and re-run the affected tests,
   rather than re-reviewing the whole PR from scratch.
@@ -358,6 +362,33 @@ again with the answer:
 
 When a run arrives already carrying that answer, honour it and never re-split
 the document — a second `ba-agent` pass would duplicate the stories.
+
+## Learning across tickets
+
+Implementers repeat mistakes across tickets because a review finding is used
+once, to fix one PR, and then thrown away. `.claude/pipeline-lessons.md` in
+the project root is where a finding outlives its ticket.
+
+The loop runs itself and needs nothing from you but faithful relaying:
+
+1. `reviewer-agent` states a `RULE:` alongside each blocking issue — the
+   general rule, not the instance it found.
+2. You pass that rule verbatim to the implementer in the retry feedback.
+3. The implementer fixes the code and appends the rule to the file, or —
+   better, when the rule is mechanically checkable — writes an analyzer rule,
+   lint rule or test instead and skips the line. It reports which under
+   `LESSONS_RECORDED`.
+4. Every later implementation pass reads the file before writing code.
+
+The file is capped at about 20 rules, because it is read on every
+implementation pass and a long one gets skimmed while still costing context.
+It should shrink as rules graduate into checks the build enforces.
+
+Two things to report at the end of a run rather than act on yourself: what
+was recorded (from `LESSONS_RECORDED`), and whether the file is at its cap.
+You never write to it — the agent that fixed the issue just learned the
+lesson concretely and is the right author. A project with no such file is
+running exactly as it always did; nothing here is required.
 
 ## Rules
 

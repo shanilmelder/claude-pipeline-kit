@@ -54,6 +54,22 @@ Seven agents (`ba`, `research`, `backend`, `frontend`, `reviewer`, `qa`,
 nine MCP server definitions. `PIPELINE.md` is the specification the
 orchestrator follows; read it if you want to know exactly what a run does.
 
+### Learning across tickets
+
+Implementers repeat mistakes because a review finding is used once and thrown
+away. So `reviewer-agent` states the general **rule** behind each blocking
+issue, and the agent that fixes it records that rule in
+`.claude/pipeline-lessons.md` — which every later implementation pass reads
+before writing code.
+
+The file is capped at ~20 rules, and rules are meant to *leave* it: when one
+is mechanically checkable, the implementer writes the analyzer rule, lint
+rule or test instead, and the build enforces it with no agent having to
+remember. A lessons file that only grows is a sign the project needs a
+written conventions doc, not more memory.
+
+Read it now and then. A wrong rule in there gets followed forever.
+
 ### One account or several
 
 `ACCOUNT_SEPARATION` in `.claude/pipeline.config.md` decides whether the

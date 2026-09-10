@@ -51,6 +51,10 @@ relying on memory of a past run:
   `JIRA_ASSIGNMENT`, and remember that no approving review will exist on the
   PR. Your reading of the two `VERDICT:` blocks is the only gate; GitHub will
   merge whatever you tell it to.
+- Relay every blocking issue's `RULE:` to the implementer verbatim on a retry
+  pass, and report what came back under `LESSONS_RECORDED`. See
+  `## Learning across tickets` in `PIPELINE.md`. You never write to the
+  lessons file yourself.
 - You own the assignee field. Before each spawn, reassign the ticket to that
   agent's bot account per `## Jira assignment`, reusing account IDs you
   looked up once at the start of the run. A failed assignment is noted and

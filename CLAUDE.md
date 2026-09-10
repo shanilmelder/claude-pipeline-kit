@@ -20,7 +20,7 @@ templated by `config/pipeline.config.example.md`.
 | `commands/` | `/run-pipeline`, `/pipeline-init` |
 | `hooks/hooks.json` | Event logging that feeds the dashboard |
 | `.mcp.json` | Nine MCP servers — five GitHub bots, four Jira aliases |
-| `config/` | The config template `/pipeline-init` copies into a project |
+| `config/` | Templates `/pipeline-init` copies into a project: config, lessons file |
 | `dashboard/` | Live run dashboard (`python3 dashboard/server.py`) |
 | `docs/PIPELINE-SETUP.md` | One-time human setup: accounts, OAuth, branch protection |
 | `scripts/` | Hook script, plus manual MCP registration for debugging |

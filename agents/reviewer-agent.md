@@ -14,6 +14,19 @@ tests pass and the acceptance criteria are met. Don't run the test suite
 yourself — that's duplicated work and duplicated wall-clock. Review the code;
 let QA run it.
 
+## Read the project's lessons first
+
+If `.claude/pipeline-lessons.md` exists in the project root, read it before
+you start. It holds rules this project's reviews have already established —
+checking against them is how a convention stays enforced once someone has
+bothered to write it down.
+
+Treat it as a checklist, not a boundary. It is a record of past findings, not
+the limit of what is worth catching, and a rule that no longer makes sense
+for the code in front of you should be called out as such rather than
+applied mechanically. If the file is missing, review exactly as you would
+otherwise.
+
 ## Scope of this pass
 
 The orchestrator tells you one of two things:
@@ -63,7 +76,7 @@ VERDICT: APPROVE | REJECT
 REVIEWED_RANGE: <full diff vs main | prev-sha..HEAD>
 HEAD_SHA: <sha you reviewed, so the next pass can scope itself>
 BLOCKING_ISSUES:
-- <file:line> — <issue> — DOMAIN: backend | frontend (only if REJECT)
+- <file:line> — <issue> — DOMAIN: backend | frontend — RULE: <general rule> (only if REJECT)
 NON_BLOCKING_NOTES:
 - ...
 SUMMARY: <1-2 sentences>
@@ -72,6 +85,18 @@ SUMMARY: <1-2 sentences>
 Tag every blocking issue with `DOMAIN` — the orchestrator routes issues to
 backend-agent or frontend-agent by that tag, and an untagged issue costs it a
 guess.
+
+Give every blocking issue a `RULE` as well: the general rule the code
+violates, stated so it applies to code that doesn't exist yet. "Null check
+missing at OrderService.cs:42" is the instance; "public service methods
+validate their arguments before use" is the rule. The implementer records the
+rule in `.claude/pipeline-lessons.md`, so the next ticket doesn't repeat the
+mistake — an instance teaches it nothing.
+
+Write a `RULE` only where there genuinely is one. Some defects are just
+defects, and a project-wide rule invented from a one-off is worse than none:
+agents follow it forever without questioning it. Write `RULE: none` in that
+case. Non-blocking notes never carry rules.
 
 Only REJECT for issues that are genuinely blocking (bugs, security holes,
 missing critical tests). Style nitpicks go under NON_BLOCKING_NOTES and should
