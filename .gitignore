@@ -1,4 +1,5 @@
 # Pipeline runtime artifacts — per-machine, not shared history.
+# In an adopting project these land under that project's .claude/.
 .claude/pipeline-status.jsonl
 .claude/runs/
 .claude/settings.local.json

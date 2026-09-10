@@ -1,9 +1,15 @@
 # Pipeline setup (one-time)
 
-This is setup documentation for humans. It is deliberately **not** in
-`CLAUDE.md`, because everything in `CLAUDE.md` is injected into the context of
-every subagent on every run — including retries. Setup instructions that only
-matter once shouldn't be paid for on every LLM call in the pipeline.
+This is setup documentation for humans. It is deliberately kept out of
+`PIPELINE.md`, because that file is read by `orchestrator-agent` on every run
+— including retries. Setup instructions that only matter once shouldn't be
+paid for on every LLM call in the pipeline.
+
+**Installing the plugin does most of section 2 for you.** The nine MCP
+servers are declared in the plugin's `.mcp.json`, and Claude Code prompts for
+the five GitHub bot PATs at install time and stores them as secrets. What
+remains manual is provisioning the accounts (§1), authenticating each Jira
+alias as the right bot (§2), and branch protection (§3).
 
 ## 1. Provision bot accounts
 
@@ -59,9 +65,12 @@ claude mcp add --transport http jira-research https://mcp.atlassian.com/v1/mcp
 claude mcp add --transport http jira-qa https://mcp.atlassian.com/v1/mcp
 ```
 
-`scripts/setup-mcp-servers.sh` / `.bat` automate this — fill the GitHub PATs
-into `scripts/.env.example` (copied to `.env.local`); the Jira side needs no
-secrets in the env file at all.
+You do not need to run these by hand when the plugin is installed — it
+declares all nine servers in `.mcp.json`, and asks for the five GitHub PATs
+during `claude plugin install`, storing them as secrets rather than in a
+settings file. The commands above are the manual equivalent, useful for
+debugging a server that won't connect. The Jira side needs no secrets either
+way; it authenticates interactively, below.
 
 ### Authenticating the Jira servers
 
@@ -117,8 +126,8 @@ Jira tool names differ by server version: `jira-research` may expose
 `get_issue`/`search_issues` while `jira-qa` exposes the Atlassian-style
 `getAccessibleAtlassianResources`/`getJiraIssue` (which needs a `cloudId`
 fetched first). Check `/mcp` for what your connected servers actually expose
-rather than assuming, and update the `tools:` frontmatter in
-`.claude/agents/*.md` to match — a tool name in frontmatter that doesn't exist
+rather than assuming, and update the `tools:` frontmatter in the plugin's
+`agents/*.md` to match — a tool name in frontmatter that doesn't exist
 is silently unavailable at runtime.
 
 ## 3. Branch protection (strongly recommended)
@@ -151,7 +160,8 @@ To enable it:
    The account needs permission to **create** issues in the target project —
    and deliberately not to transition them; status stays with the
    orchestrator.
-2. Set `JIRA_PROJECT_KEY` in `CLAUDE.md` to the project stories land in.
+2. Set `JIRA_PROJECT_KEY` in `.claude/pipeline.config.md` to the project
+   stories land in.
 3. Either set `REQUIREMENTS_MODE: true` and point `REQUIREMENTS_DOC` at your
    document, or leave the flag `false` and turn it on per run by naming a
    document: `/run-pipeline docs/requirements/checkout.md`.

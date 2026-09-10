@@ -1,0 +1,14 @@
+{
+  "name": "claude-pipeline-kit",
+  "owner": {
+    "name": "shanilmelder",
+    "url": "https://github.com/shanilmelder"
+  },
+  "plugins": [
+    {
+      "name": "claude-pipeline-kit",
+      "source": "./",
+      "description": "Jira ticket or requirement doc to merge-ready PR, run by a fleet of subagents with separate bot identities."
+    }
+  ]
+}

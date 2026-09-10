@@ -13,7 +13,8 @@ The target is either:
   `ba-agent` first splits the document into Jira stories and the pipeline
   then runs once per story.
 
-If nothing is given below, `REQUIREMENTS_MODE` in `CLAUDE.md` decides: when
+If nothing is given below, `REQUIREMENTS_MODE` in the project's
+`.claude/pipeline.config.md` decides: when
 `true`, run in requirements mode against `REQUIREMENTS_DOC`; when `false`,
 ask which ticket to run.
 
