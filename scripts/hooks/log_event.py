@@ -143,7 +143,7 @@ def summarize(data):
     # subagent (per Claude Code's hook schema). orchestrator-agent is now a
     # real subagent (name: orchestrator-agent) and gets a proper agent_type
     # like everyone else. If agent_type is absent, this event belongs to the
-    # top-level Claude Code session itself, which — per CLAUDE.md — does
+    # top-level Claude Code session itself, which — per PIPELINE.md — does
     # nothing but spawn orchestrator-agent, so we label it "main-session"
     # rather than "orchestrator" to avoid double-counting the two as the
     # same thing on the dashboard.

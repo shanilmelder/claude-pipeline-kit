@@ -1,0 +1,66 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Bash|Edit|Write|MultiEdit|mcp__github-.*|mcp__jira-.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\" 2>/dev/null || python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/log_event.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

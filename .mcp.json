@@ -1,0 +1,55 @@
+{
+  "mcpServers": {
+    "github-orchestrator": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.orchestrator_bot_github_pat}"
+      }
+    },
+    "github-backend": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.backend_bot_github_pat}"
+      }
+    },
+    "github-frontend": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.frontend_bot_github_pat}"
+      }
+    },
+    "github-reviewer": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.reviewer_bot_github_pat}"
+      }
+    },
+    "github-qa": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.qa_bot_github_pat}"
+      }
+    },
+    "jira-orchestrator": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "jira-ba": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "jira-research": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "jira-qa": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    }
+  }
+}

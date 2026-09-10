@@ -27,7 +27,7 @@ hit Run. No need to switch to a terminal to kick off a ticket.
 ## How it works
 
 0. As of this version, `orchestrator-agent` is itself a real subagent
-   (`.claude/agents/orchestrator-agent.md`), not the top-level Claude Code
+   (the plugin's `agents/orchestrator-agent.md`), not the top-level Claude Code
    session — it spawns ba-agent/research-agent/backend-agent/frontend-agent/
    reviewer-agent/qa-agent itself using nested subagent support (requires
    Claude Code v2.1.172+). The top-level session's only job is to spawn
@@ -103,7 +103,7 @@ ba-agent splits the document into stories, then the pipeline runs once per
 story. Both forms are validated against a strict pattern — and the doc form
 additionally has to resolve to a file that exists inside the project — since
 the value becomes a subprocess argument. The autonomy dropdown appends an explicit per-run
-override to that prompt, which `CLAUDE.md` already honors above the
+override to that prompt, which `PIPELINE.md` already honors above the
 `AUTONOMOUS_MODE` config value.
 
 A headless run can't answer a question either, so with `STORY_APPROVAL: true`
@@ -161,7 +161,7 @@ Treat access to this port as equivalent to shell access to the project.
   tracker, handoffs, event log) via hooks, since those don't depend on
   capturing the process's stdout.
 - The stage tracker shows Review and QA as a single parallel gate because
-  that's how the pipeline runs them (see `CLAUDE.md` step 5). Backend and
+  that's how the pipeline runs them (see `PIPELINE.md` step 5). Backend and
   Frontend are also drawn as a parallel column — they run sequentially on the
   first pass but in parallel on retry passes.
 - Nested subagent support (needed for `orchestrator-agent` to spawn the
