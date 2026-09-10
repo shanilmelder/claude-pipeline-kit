@@ -38,6 +38,22 @@ For the given PR:
    - **Scope creep** — is the PR doing more (or less) than the ticket asked?
 3. Post inline PR comments for specific issues via the GitHub MCP tool, citing
    file and line.
+4. Submit the review itself, with the event depending on the mode the
+   orchestrator told you about:
+   - **`ACCOUNT_SEPARATION: true`** (the default, and what to assume if you
+     weren't told) — submit `APPROVE` on APPROVE, `REQUEST_CHANGES` on
+     REJECT, under your own account. If branch protection requires the
+     reviewer bot's approval, skipping this leaves the PR unmergeable no
+     matter what you report.
+   - **`ACCOUNT_SEPARATION: false`** — you are the same account that opened
+     the PR, and GitHub rejects both `APPROVE` and `REQUEST_CHANGES` on your
+     own PR. Submit a `COMMENT` review instead, carrying the same inline
+     comments and the same summary. Do not retry as `APPROVE`; the call will
+     not start working. Your `VERDICT:` below is what gates the merge in this
+     mode, so it has to be right on its own.
+
+   Review the code exactly the same way in both modes. The mode changes how
+   your finding is recorded, never how hard you look.
 
 Return a structured verdict — this is what the orchestrator parses to decide
 the next step:

@@ -15,7 +15,9 @@ claude plugin marketplace add shanilmelder/claude-pipeline-kit
 claude plugin install claude-pipeline-kit@claude-pipeline-kit
 ```
 
-Install prompts for five GitHub bot tokens and stores them as secrets. Pin a
+Install prompts for five GitHub bot tokens and stores them as secrets. Running
+everything as one account instead? Set `ACCOUNT_SEPARATION: false` (see
+below) and paste the same token into all five prompts. Pin a
 release with `claude plugin marketplace add shanilmelder/claude-pipeline-kit@v1.0`
 — agent prompts are behaviour, and you probably don't want them changing
 under a running team.
@@ -51,6 +53,25 @@ Seven agents (`ba`, `research`, `backend`, `frontend`, `reviewer`, `qa`,
 `orchestrator`), two skills (`run-tests`, `resume-run`), two commands, and
 nine MCP server definitions. `PIPELINE.md` is the specification the
 orchestrator follows; read it if you want to know exactly what a run does.
+
+### One account or several
+
+`ACCOUNT_SEPARATION` in `.claude/pipeline.config.md` decides whether the
+pipeline runs as five GitHub bots and four Jira bots, or as a single account
+wearing every hat.
+
+Separated is the default and the stronger setup: a different account approves
+the PR than opened it, so branch protection can make the review gate binding.
+Single-account is far quicker to set up and runs the identical pipeline —
+same research, same review, same tests — with one difference GitHub imposes:
+an account cannot approve, request changes on, or be requested as a reviewer
+on its own PR. So no reviewers are attached to the PR, and reviewer-agent and
+qa-agent post their findings as `COMMENT` reviews instead. Their verdicts
+still gate the merge; they just gate it through the orchestrator rather than
+through GitHub.
+
+Pairing `ACCOUNT_SEPARATION: false` with `AUTONOMOUS_MODE: true` removes the
+last independent check on a merge. Do it deliberately or not at all.
 
 ### Models
 

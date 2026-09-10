@@ -10,6 +10,7 @@ Keep it in version control. It describes the project, not a person.
 ## Config
 
 ```
+ACCOUNT_SEPARATION: true
 AUTONOMOUS_MODE: false
 REQUIREMENTS_MODE: false
 REQUIREMENTS_DOC: docs/requirements/EXAMPLE.md
@@ -25,6 +26,25 @@ REVIEWER_BOT_JIRA_ACCOUNT: pipeline-reviewer-bot
 QA_BOT_JIRA_ACCOUNT: pipeline-qa-bot
 ORCHESTRATOR_BOT_JIRA_ACCOUNT: pipeline-orchestrator-bot
 ```
+
+`ACCOUNT_SEPARATION: true` runs the pipeline as separate bot identities — five
+GitHub accounts and four Jira accounts, per `docs/PIPELINE-SETUP.md`. That is
+what makes the review gate real: a different account approves the PR than
+opened it, and branch protection can enforce it.
+
+Set it to `false` to run everything as **one** GitHub account and one Jira
+account. Setup gets much shorter — one PAT pasted into all five GitHub
+prompts, one Atlassian OAuth consent for all four Jira aliases. The pipeline
+runs identically, with one difference forced by GitHub: an account cannot
+approve, request changes on, or be added as a reviewer to its own PR. So no
+reviewers are requested on the PR, and reviewer-agent and qa-agent post their
+findings as `COMMENT` reviews. They still review and still test in full — the
+verdicts just stop being enforceable by branch protection, leaving the
+orchestrator as the only gate.
+
+Do not pair `ACCOUNT_SEPARATION: false` with `AUTONOMOUS_MODE: true` unless
+you have thought hard about it: nothing then stands between a misread verdict
+and a merge.
 
 `AUTONOMOUS_MODE: false` is the shipped default deliberately — it stops the
 run before the merge and reports instead. Turn it on once you have watched a

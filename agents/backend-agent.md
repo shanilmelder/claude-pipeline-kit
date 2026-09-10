@@ -37,6 +37,14 @@ description rather than doing a surprise upgrade as a side effect.
    ask the orchestrator if not provided) — there is no separate
    "request review" tool, it's a parameter on the same call.
 
+   **Unless `ACCOUNT_SEPARATION` is `false`.** Then every bot is the same
+   account as you, and GitHub rejects a review request naming the PR's own
+   author — the whole `create_pull_request` call fails, not just the request.
+   Omit the `reviewers` parameter entirely and open the PR without it.
+   reviewer-agent and qa-agent still run and still comment; they just are not
+   formally requested. The orchestrator tells you which mode is in effect;
+   if it didn't, assume `true` and pass the reviewers.
+
 **"frontend-agent already created the branch, build on top of it" (second
 implementer)**
 1. Check out the existing feature branch — do not create a new one.

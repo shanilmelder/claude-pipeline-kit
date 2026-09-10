@@ -2,47 +2,54 @@
   "name": "claude-pipeline-kit",
   "displayName": "Agentic Development Pipeline",
   "description": "A fleet of subagents that takes a Jira ticket — or a requirement document — from intake to a merge-ready PR, with separate bot identities for research, implementation, review, QA and merge.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": {
     "name": "shanilmelder"
   },
   "repository": "https://github.com/shanilmelder/claude-pipeline-kit",
   "license": "MIT",
-  "keywords": ["jira", "github", "pipeline", "orchestration", "code-review", "qa"],
+  "keywords": [
+    "jira",
+    "github",
+    "pipeline",
+    "orchestration",
+    "code-review",
+    "qa"
+  ],
   "mcpServers": "./.mcp.json",
   "userConfig": {
     "orchestrator_bot_github_pat": {
       "type": "string",
       "title": "Orchestrator bot GitHub PAT",
-      "description": "Token for the bot that merges PRs. Needs merge rights on the target repo.",
+      "description": "Token for the bot that merges PRs. Needs merge rights on the target repo. In single-account mode (ACCOUNT_SEPARATION: false) enter the same token for all five.",
       "sensitive": true,
       "required": true
     },
     "backend_bot_github_pat": {
       "type": "string",
       "title": "Backend bot GitHub PAT",
-      "description": "Token for the backend implementer. Create branch, push, open/update PR — no merge.",
+      "description": "Token for the backend implementer. Create branch, push, open/update PR — no merge. In single-account mode (ACCOUNT_SEPARATION: false) enter the same token for all five.",
       "sensitive": true,
       "required": true
     },
     "frontend_bot_github_pat": {
       "type": "string",
       "title": "Frontend bot GitHub PAT",
-      "description": "Token for the frontend implementer. Create branch, push, open/update PR — no merge.",
+      "description": "Token for the frontend implementer. Create branch, push, open/update PR — no merge. In single-account mode (ACCOUNT_SEPARATION: false) enter the same token for all five.",
       "sensitive": true,
       "required": true
     },
     "reviewer_bot_github_pat": {
       "type": "string",
       "title": "Reviewer bot GitHub PAT",
-      "description": "Token for the code reviewer. Read PR/diff and submit reviews — no push, no merge.",
+      "description": "Token for the code reviewer. Read PR/diff and submit reviews — no push, no merge. In single-account mode (ACCOUNT_SEPARATION: false) enter the same token for all five.",
       "sensitive": true,
       "required": true
     },
     "qa_bot_github_pat": {
       "type": "string",
       "title": "QA bot GitHub PAT",
-      "description": "Token for QA. Read PR and submit reviews — no push, no merge.",
+      "description": "Token for QA. Read PR and submit reviews — no push, no merge. In single-account mode (ACCOUNT_SEPARATION: false) enter the same token for all five.",
       "sensitive": true,
       "required": true
     }

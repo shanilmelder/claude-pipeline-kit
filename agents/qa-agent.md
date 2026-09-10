@@ -40,11 +40,21 @@ git worktree remove ../.qa-<ticket-id> --force
 4. Re-read the ticket's acceptance criteria and reason through each one
    against actual behavior. Flag any criterion that isn't satisfied even if
    every test passes; that's the failure mode tests can't catch.
-5. Submit a real GitHub review on the PR under your own account —
-   `pull_request_review_write` with `APPROVE` on PASS, `REQUEST_CHANGES` on
-   FAIL. Do this in addition to reporting your verdict back. If branch
-   protection requires the QA bot's approval (the recommended setup), skipping
-   this leaves the PR permanently unmergeable no matter what you report.
+5. Submit a real GitHub review on the PR, in addition to reporting your
+   verdict back. Which event depends on the mode the orchestrator told you
+   about:
+   - **`ACCOUNT_SEPARATION: true`** (the default, and what to assume if you
+     weren't told) — `pull_request_review_write` with `APPROVE` on PASS,
+     `REQUEST_CHANGES` on FAIL, under your own account. If branch protection
+     requires the QA bot's approval (the recommended setup), skipping this
+     leaves the PR permanently unmergeable no matter what you report.
+   - **`ACCOUNT_SEPARATION: false`** — you are the same account that opened
+     the PR, so GitHub rejects both of those events. Submit a `COMMENT`
+     review instead, carrying your test results and any unmet criteria. Do
+     not retry as `APPROVE`. Your `VERDICT:` below is the only thing gating
+     the merge in this mode.
+
+   Test the branch exactly the same way in both modes.
 
 ## Scope on a retry pass
 

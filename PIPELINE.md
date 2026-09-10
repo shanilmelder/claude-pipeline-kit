@@ -69,6 +69,38 @@ everything" forces it off; "show me the stories first" forces it on). See
 `## Story selection checkpoint`. Ignored when requirements mode is off — a
 ticket-ID run has nothing to choose between.
 
+`ACCOUNT_SEPARATION` decides whether the pipeline runs as a fleet of distinct
+bot identities or as one account wearing every hat.
+
+When `true` (the default, and what the rest of this file assumes), each agent
+acts through its own GitHub/Jira account per `## Service account identities`,
+reviewer-agent and qa-agent submit real approving reviews, and branch
+protection can make the gate binding at the GitHub level.
+
+When `false`, every alias authenticates as the same account. The pipeline runs
+the same steps in the same order, but three things must change, because GitHub
+refuses to let an account approve, request changes on, or be added as a
+reviewer to a PR it authored:
+
+- **No reviewers are requested on the PR.** backend-agent and frontend-agent
+  open it without the `reviewers` parameter.
+- **reviewer-agent and qa-agent still review in full** — same diff reading,
+  same test runs, same criteria — and still post their findings to the PR as
+  a `COMMENT` review with inline comments. They do not attempt `APPROVE` or
+  `REQUEST_CHANGES`; those calls fail on your own PR.
+- **The gate becomes yours alone.** With no approving review, GitHub will not
+  stop a bad merge; the `VERDICT:` blocks the two agents return to you are the
+  only gate. Read them exactly as carefully as before.
+
+Tell every agent you spawn which mode is in effect — it is part of the context
+you pass by value, like the ticket text.
+
+Because the GitHub-level backstop is gone, `AUTONOMOUS_MODE: true` alongside
+`ACCOUNT_SEPARATION: false` means a misread verdict merges unreviewed code
+with nothing in the way. If you find both set, say so plainly in your final
+report. Run the pipeline as configured — it is the adopter's call, not yours
+— but do not let the combination pass unremarked.
+
 `JIRA_ASSIGNMENT` controls whether the orchestrator reassigns the ticket to
 the bot account of whichever agent is currently working on it (see `## Jira
 assignment`). The `*_BOT_JIRA_ACCOUNT` values are the accounts it assigns to
@@ -119,6 +151,14 @@ a specific bot account.
 backend-agent and frontend-agent each authenticate as themselves when pushing,
 even on a shared branch, so commit history attributes each domain's changes to
 the right bot.
+
+**With `ACCOUNT_SEPARATION: false`** every alias in this table resolves to the
+same account. The aliases themselves do not change — keep using
+`mcp__github-backend__...` from backend-agent and `mcp__jira-research__...`
+from research-agent exactly as below — but the identity behind them is shared,
+so the table describes roles rather than accounts. Attribution then comes from
+what each agent writes, not from who wrote it: agents posting Jira comments
+name themselves in the comment body.
 
 Use `mcp__github-orchestrator__...` / `mcp__jira-orchestrator__...` for merges,
 transitions, assignee changes, and your own summary comments.
@@ -186,6 +226,11 @@ an assignee. Report it once at the end rather than retrying on every step.
 stopped, so the ticket shows where it was dropped.
 - When `JIRA_ASSIGNMENT` is `false`, skip all of this and leave the assignee
 untouched.
+- `ACCOUNT_SEPARATION: false` makes assignment meaningless — every bot
+resolves to the same person, so reassigning says nothing about who holds the
+ticket. Treat it as `JIRA_ASSIGNMENT: false` regardless of how that flag is
+set, and note in your final report that you skipped assignment for that
+reason.
 
 ## Pipeline
 
@@ -321,7 +366,12 @@ assignee — those stay with you. `ba-agent` is the one subagent that
 *creates* Jira issues; it still never transitions or assigns them.
 reviewer-agent and qa-agent DO submit real GitHub reviews under their own
 accounts; that's intentional. backend-agent and frontend-agent
-must never approve or review their own or each other's PR.
+must never approve or review their own or each other's PR. Under
+`ACCOUNT_SEPARATION: false` this stays true at the *agent* level even though
+the account is shared: an implementer never reviews, and reviewer-agent and
+qa-agent are still spawned as separate agents with their own verdicts. What
+changes is only how their findings reach GitHub — a `COMMENT` review instead
+of an approving one.
 - Each agent posts its own work product under its own Jira/GitHub identity:
 research-agent comments its brief on the ticket itself, reviewer-agent and
 qa-agent leave their own PR reviews. Don't relay another agent's output as a
@@ -329,7 +379,8 @@ comment from you — a brief posted under the wrong account misattributes who
 decided what.
 - Always pass full context explicitly in each subagent prompt — ticket text,
 acceptance criteria, branch name, PR number, head SHA, prior feedback, the
-interface contract, and (for implementers) whether they own the branch.
+interface contract, the value of `ACCOUNT_SEPARATION`, and (for implementers)
+whether they own the branch.
 Subagents have no memory of earlier steps or of each other.
 - Pass context by **value, not by reference**: paste the ticket text and
 contract into the prompt rather than telling an agent to go fetch it. Every

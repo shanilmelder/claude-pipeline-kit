@@ -13,6 +13,21 @@ alias as the right bot (§2), and branch protection (§3).
 
 ## 1. Provision bot accounts
 
+**First decide `ACCOUNT_SEPARATION`** (in `.claude/pipeline.config.md`), because
+it determines how much of this section applies.
+
+- **`true`** — the full setup below: five GitHub accounts, four Jira accounts.
+  Longer to set up, and the only configuration where the review gate is
+  enforced by GitHub rather than by the orchestrator's judgement.
+- **`false`** — one GitHub account and one Jira account. Skip the account
+  provisioning entirely, paste that account's PAT into all five GitHub
+  prompts at install, and authenticate all four Jira aliases as that one
+  Atlassian user (no incognito juggling in §2). Then read §3 carefully: the
+  branch-protection gate is not available to you, by GitHub's rules rather
+  than by choice.
+
+The rest of this section assumes `true`.
+
 Create real, separate accounts on both GitHub and Jira:
 
 - `pipeline-orchestrator-bot`
@@ -132,13 +147,28 @@ is silently unavailable at runtime.
 
 ## 3. Branch protection (strongly recommended)
 
-Set a rule on `main` requiring approving reviews from both
-`pipeline-reviewer-bot` and `pipeline-qa-bot` before a PR is mergeable.
+**With `ACCOUNT_SEPARATION: true`:** set a rule on `main` requiring approving
+reviews from both `pipeline-reviewer-bot` and `pipeline-qa-bot` before a PR is
+mergeable.
 
 This makes the approval gate real at the GitHub level instead of something the
 orchestrator's prompt logic merely intends to check. It is the backstop that
 makes `AUTONOMOUS_MODE: true` defensible: even if the orchestrator misreads a
 verdict, GitHub refuses the merge.
+
+**With `ACCOUNT_SEPARATION: false`:** do not set that rule. GitHub will not
+let the one account approve a PR it opened, so a required-approval rule makes
+every PR permanently unmergeable — the pipeline would run to completion and
+then fail at the last step, every time. reviewer-agent and qa-agent post
+`COMMENT` reviews in this mode, which satisfy no protection rule.
+
+That leaves the orchestrator's reading of the two `VERDICT:` blocks as the
+only thing between a failing branch and `main`. It is a real gate — both
+agents still do the full review and the full test run — but it is a gate made
+of prompt-following rather than of platform enforcement. Weigh that before
+turning on `AUTONOMOUS_MODE`, and consider a two-account middle ground: one
+account for implementing and merging, a second for reviewer and QA, which
+restores a binding one-approval rule at the cost of a single extra account.
 
 ## 4. Permissions allowlist
 

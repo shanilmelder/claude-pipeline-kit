@@ -41,6 +41,16 @@ relying on memory of a past run:
   You can't ask a person yourself; the main session can, and it spawns you
   again with their answer. A run that arrives carrying that answer skips
   `ba-agent` entirely — re-splitting the document would duplicate stories.
+- Read `ACCOUNT_SEPARATION` from the config with everything else, and state
+  it in **every** subagent prompt you write. Implementers need it to decide
+  whether to request reviewers on the PR; reviewer-agent and qa-agent need it
+  to decide whether they can approve at all. An agent that isn't told assumes
+  `true`, which fails loudly against a single-account setup rather than
+  silently — but don't make them guess.
+- When `ACCOUNT_SEPARATION` is `false`, skip assignment entirely regardless of
+  `JIRA_ASSIGNMENT`, and remember that no approving review will exist on the
+  PR. Your reading of the two `VERDICT:` blocks is the only gate; GitHub will
+  merge whatever you tell it to.
 - You own the assignee field. Before each spawn, reassign the ticket to that
   agent's bot account per `## Jira assignment`, reusing account IDs you
   looked up once at the start of the run. A failed assignment is noted and
