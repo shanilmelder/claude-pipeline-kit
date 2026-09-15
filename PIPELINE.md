@@ -40,14 +40,14 @@ Per-run overrides stated by the person always win over the file.
 ## Config
 
 `AUTONOMOUS_MODE` is the project-wide default and the single source of truth —
-there is no separate default stated elsewhere. When `true`, step 7 skips the
+there is no separate default stated elsewhere. When `true`, step 8 skips the
 human check-in and merges once the gate passes. A person can override it for a
 single run by saying so explicitly ("run PROJ-123 fully autonomously" forces it
 on; "check with me before merging" forces it off). Read the caution in
 `${CLAUDE_PLUGIN_ROOT}/docs/PIPELINE-SETUP.md` before enabling it on a shared repo.
 
 `REQUIREMENTS_MODE` selects what a run starts from. When `false` (the
-default), a run starts from a Jira ticket ID and step 0 is skipped entirely.
+default), a run starts from a Jira ticket ID and step 1 is skipped entirely.
 When `true`, a run starts from a **user requirement document** on disk:
 `ba-agent` reads it, breaks it into Jira stories, and the normal pipeline then
 runs once per story. It is also overridable per run — pointing at a document
@@ -213,7 +213,7 @@ reassigning the ticket to the bot account of the agent you are delegating to,
 | both implementers, first pass | the one you spawn *first* (the branch owner), then the second when you spawn it |
 | both implementers, in parallel on a retry | the one that owns the branch — name both in the comment you post |
 | `reviewer-agent` + `qa-agent` | `REVIEWER_BOT_JIRA_ACCOUNT` — one field, two agents; say in the comment that QA is running too |
-| the merge (step 8 onward) | `ORCHESTRATOR_BOT_JIRA_ACCOUNT`, and leave it there at `Done` |
+| the merge (step 9) | `ORCHESTRATOR_BOT_JIRA_ACCOUNT`, and leave it there at `Done` |
 
 - Resolve the configured account names to account IDs **once per run**, with
 `lookupJiraAccountId`, and reuse the IDs for every later assignment — same
@@ -234,8 +234,8 @@ reason.
 
 ## Pipeline
 
-Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"), start at step 1.
-Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
+Given a Jira ticket ID (e.g. "run the pipeline on PROJ-123"), start at step 2.
+Given a requirement document (see `REQUIREMENTS_MODE`), start at step 1.
 
 1. **Requirements mode only.** Resolve the document path — the one given for
  this run, else `REQUIREMENTS_DOC`. Spawn `ba-agent` with that path and
@@ -243,7 +243,7 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
  returns `## Stories` and `## Execution Order`.
   - The stories it writes are business-language only, by design — no
    implementation detail. research-agent does the technical translation per
-   story at step 3, reading the actual codebase. Don't treat a story's
+   story at step 4, reading the actual codebase. Don't treat a story's
    silence about *how* as a gap to fill in yourself when you spawn it.
   - If it returns `BLOCKED: yes`, stop and report — no stories exist, so
   there is nothing to run. Do not invent stories yourself.
@@ -252,9 +252,9 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
   choice — see `## Story selection checkpoint`. The stories exist in Jira,
   so nothing is lost by stopping.
   - When `STORY_APPROVAL` is `false`, or the run already told you which
-  stories to implement, take `## Execution Order` and run **steps 1–8 in
+  stories to implement, take `## Execution Order` and run **steps 2–9 in
   full, once per story, one story at a time, in that order**. Each story is
-  an ordinary ticket-ID run from step 1 onward; nothing below changes.
+  an ordinary ticket-ID run from step 2 onward; nothing below changes.
   - Stories run sequentially, not in parallel, even when `## Stories` marks
   them independent: they share one repo and one main branch, and a second
   story branched before the first merged is a rebase you'd have to babysit.
@@ -279,7 +279,7 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
 5. Read research-agent's `## Scope` for `BACKEND_CHANGES_NEEDED` /
  `FRONTEND_CHANGES_NEEDED`, and `## Interface Contract` if both are needed.
   - **One implementer needed**: spawn it as branch owner — it creates the
-   branch, implements, and opens the PR itself. Go to step 5.
+   branch, implements, and opens the PR itself. Go to step 6.
   - **Both needed**: they share one branch, in the order research-agent's
   `IMPLEMENTATION_ORDER` specifies. Spawn the first as branch owner; it
   creates the branch, implements, pushes, and does **not** open the PR.
@@ -301,13 +301,13 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
   reviewer-agent's view of the tree or the user's working copy.
   - Collect both verdicts before deciding anything.
 7. Decide from the two verdicts:
-  - **Both APPROVE/PASS**: go to step 7.
+  - **Both APPROVE/PASS**: go to step 8.
   - **Either REJECT or FAIL**: transition back to **In Progress**. Merge
   `BLOCKING_ISSUES` and unmet `ACCEPTANCE_CRITERIA`/`TEST_RESULTS` into one
   feedback set, split it by domain, and spawn the relevant implementers —
   backend issues to `backend-agent`, frontend to `frontend-agent`, both in
   **parallel** if issues span both, since they touch disjoint directories.
-  Whichever pushes second must rebase/pull first. Then return to step 5.
+  Whichever pushes second must rebase/pull first. Then return to step 6.
   - Carry each issue's `RULE:` through to the implementer **verbatim**. That
   line is what gets recorded in `.claude/pipeline-lessons.md` and is the only
   part of the feedback that outlives this ticket — paraphrasing it hands the
@@ -321,7 +321,7 @@ Given a requirement document (see `REQUIREMENTS_MODE`), start at step 0.
   - `false`: report full status — ticket, PR link, reviewer summary, QA
    summary — as your final response and stop before merging. You can't
    pause mid-run for input; a follow-up run is how the human says go.
-  - `true`: proceed to step 8, and post the same summary as a Jira comment
+  - `true`: proceed to step 9, and post the same summary as a Jira comment
   and a PR comment for visibility.
    The ticket stays at `In Review` until the merge actually happens.
 9. Merge the PR, then transition to **Done**. Only transition to Done after
@@ -348,12 +348,12 @@ EXECUTION_ORDER: KAN-11, KAN-12, KAN-13
 <ba-agent's ## Notes for the Orchestrator, and anything it flagged>
 ```
 
-Leave every story at `To Do`, assign nothing, and do not start step 1 for any
+Leave every story at `To Do`, assign nothing, and do not start step 2 for any
 of them. The main session asks the person which way to go and spawns you
 again with the answer:
 
 - **implement all** — a fresh requirements-mode run that skips `ba-agent`
- (the stories already exist) and runs steps 1–8 once per story in the given
+ (the stories already exist) and runs steps 2–9 once per story in the given
  execution order.
 - **one story** — an ordinary ticket-ID run on the story they picked. If it
  `DEPENDS_ON` a story that isn't `Done`, say so in your final report and

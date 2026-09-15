@@ -1,6 +1,6 @@
 ---
 name: resume-run
-description: Resume a pipeline run that stopped part-way — a ticket left at In Progress or In Review with a branch and possibly a PR already in flight — instead of restarting it from step 1. Use when orchestrator-agent is handed a ticket that a previous run already touched, including a story that hit the retry cap. Determines the real resume point from Jira and GitHub state and reuses the existing brief, branch and PR.
+description: Resume a pipeline run that stopped part-way — a ticket left at In Progress or In Review with a branch and possibly a PR already in flight — instead of restarting it from step 2. Use when orchestrator-agent is handed a ticket that a previous run already touched, including a story that hit the retry cap. Determines the real resume point from Jira and GitHub state and reuses the existing brief, branch and PR.
 ---
 
 # Resuming a stopped run
@@ -8,7 +8,7 @@ description: Resume a pipeline run that stopped part-way — a ticket left at In
 A run stops part-way for ordinary reasons: the retry cap, an ambiguity
 block, a failed merge, an interrupted session. The ticket is left where it
 died by design, so the state on Jira and GitHub *is* the checkpoint. Restarting
-at step 1 throws that away — it re-runs research that is already written and
+at step 2 throws that away — it re-runs research that is already written and
 can open a second branch for one ticket.
 
 This skill is for `orchestrator-agent`. Subagents never resume anything; they
@@ -18,7 +18,7 @@ do the stage they are given.
 
 It is a resume only if the ticket is **not** at `To Do`, or a
 `feature/<ticket-id>-*` branch already exists. A `To Do` ticket with no
-branch is an ordinary fresh run — go to step 1 of the pipeline and ignore the
+branch is an ordinary fresh run — go to step 2 of the pipeline and ignore the
 rest of this.
 
 Never resume across stories. In requirements mode each story is its own

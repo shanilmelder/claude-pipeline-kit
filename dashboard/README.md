@@ -161,7 +161,7 @@ Treat access to this port as equivalent to shell access to the project.
   tracker, handoffs, event log) via hooks, since those don't depend on
   capturing the process's stdout.
 - The stage tracker shows Review and QA as a single parallel gate because
-  that's how the pipeline runs them (see `PIPELINE.md` step 5). Backend and
+  that's how the pipeline runs them (see `PIPELINE.md` step 6). Backend and
   Frontend are also drawn as a parallel column — they run sequentially on the
   first pass but in parallel on retry passes.
 - Nested subagent support (needed for `orchestrator-agent` to spawn the

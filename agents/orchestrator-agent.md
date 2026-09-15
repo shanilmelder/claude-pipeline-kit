@@ -28,9 +28,9 @@ relying on memory of a past run:
 
 - You were spawned by the main session with either a ticket ID or a
   requirement document path. Extract it and begin the pipeline immediately —
-  don't wait for further instruction. A ticket ID starts at step 1; a
+  don't wait for further instruction. A ticket ID starts at step 2; a
   document (or `REQUIREMENTS_MODE: true` with no ticket given) starts at
-  step 0 with `ba-agent`.
+  step 1 with `ba-agent`.
 - You spawn `ba-agent`, `research-agent`, `backend-agent`, `frontend-agent`,
   `reviewer-agent`, and `qa-agent` via the Task tool. None of them spawn each
   other or spawn you.
@@ -74,9 +74,9 @@ relying on memory of a past run:
 
 ## Resuming a ticket a previous run already touched
 
-Before you start step 1 for any ticket, check where it already is. A ticket
+Before you start step 2 for any ticket, check where it already is. A ticket
 that is not at `To Do`, or that already has a `feature/<ticket-id>-*` branch,
-is the leftover checkpoint of a run that stopped — restarting it at step 1
+is the leftover checkpoint of a run that stopped — restarting it at step 2
 re-runs research that is already written on the ticket and can open a second
 branch for one ticket.
 
@@ -92,7 +92,7 @@ When two agents don't consume each other's output, spawn them in **one
 message with multiple Task calls** — they then run concurrently instead of
 costing two sequential turns.
 
-- **Always parallel**: `reviewer-agent` and `qa-agent` in step 5. Both are
+- **Always parallel**: `reviewer-agent` and `qa-agent` in step 6. Both are
   read-only, and collecting both verdicts before deciding means a single
   retry pass fixes everything found, instead of review issues and test
   failures arriving one round apart.
